@@ -1,76 +1,230 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ohm's Law Monitoring System</title>
-</head>
+\<!DOCTYPE html>
 
-<body>
+\<html lang="en"> \<head> \<meta charset="UTF-8"> \<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <h1>Ohm's Law Monitoring System</h1>
+\<title>Ohm's Law Monitoring System\</title>
 
-    <h2>Live Monitoring</h2>
+\<style>
+\* {
+&#x20;   margin: 0;
+&#x20;   padding: 0;
+&#x20;   box-sizing: border-box;
+}
 
-    <div>
-        <h3>Voltage</h3>
-        <p id="voltage">0 V</p>
-    </div>
+body {
+&#x20;   font-family: Arial, sans-serif;
+&#x20;   background: #0b1120;
+&#x20;   color: white;
+&#x20;   padding: 20px;
+}
 
-    <div>
-        <h3>Current</h3>
-        <p id="current">0 A</p>
-    </div>
+header {
+&#x20;   text-align: center;
+&#x20;   padding: 25px;
+&#x20;   background: #17243a;
+&#x20;   border-radius: 15px;
+&#x20;   border-bottom: 3px solid #00d4ff;
+}
 
-    <div>
-        <h3>Resistance</h3>
-        <p id="resistance">0 Ω</p>
-    </div>
+header h1 {
+&#x20;   color: #00d4ff;
+&#x20;   font-size: 27px;
+}
 
-    <div>
-        <h3>Power</h3>
-        <p id="power">0 W</p>
-    </div>
+header p {
+&#x20;   color: #aab8cc;
+&#x20;   margin-top: 10px;
+}
 
-    <h2>Ohm's Law Calculation</h2>
+.container {
+&#x20;   max-width: 1100px;
+&#x20;   margin: auto;
+}
 
-    <table border="1">
-        <tr>
-            <th>Parameter</th>
-            <th>Formula</th>
-            <th>Result</th>
-        </tr>
+h2 {
+&#x20;   color: #00d4ff;
+&#x20;   margin: 30px 0 20px;
+}
 
-        <tr>
-            <td>Voltage</td>
-            <td>V = I × R</td>
-            <td id="tableVoltage">0 V</td>
-        </tr>
+.dashboard {
+&#x20;   display: grid;
+&#x20;   grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+&#x20;   gap: 20px;
+}
 
-        <tr>
-            <td>Current</td>
-            <td>I = V / R</td>
-            <td id="tableCurrent">0 A</td>
-        </tr>
+.card {
+&#x20;   background: #17243a;
+&#x20;   padding: 25px;
+&#x20;   border-radius: 15px;
+&#x20;   text-align: center;
+&#x20;   border: 1px solid #263c59;
+}
 
-        <tr>
-            <td>Resistance</td>
-            <td>R = V / I</td>
-            <td id="tableResistance">0 Ω</td>
-        </tr>
+.card h3 {
+&#x20;   color: #aab8cc;
+&#x20;   margin-bottom: 18px;
+}
 
-        <tr>
-            <td>Power</td>
-            <td>P = V × I</td>
-            <td id="tablePower">0 W</td>
-        </tr>
-    </table>
+.card p {
+&#x20;   color: #00d4ff;
+&#x20;   font-size: 30px;
+&#x20;   font-weight: bold;
+}
 
-    <h2>Hence, Ohm's Law is Proved.</h2>
+.calculation {
+&#x20;   background: #17243a;
+&#x20;   padding: 20px;
+&#x20;   border-radius: 15px;
+&#x20;   line-height: 2;
+}
 
-    <footer>
-        <p>Ohm's Law Monitoring System</p>
-    </footer>
+table {
+&#x20;   width: 100%;
+&#x20;   border-collapse: collapse;
+&#x20;   background: #17243a;
+&#x20;   margin-top: 15px;
+}
 
-</body>
-</html>
+th, td {
+&#x20;   border: 1px solid #344963;
+&#x20;   padding: 15px;
+&#x20;   text-align: center;
+}
+
+th {
+&#x20;   color: #00d4ff;
+&#x20;   background: #20334e;
+}
+
+.conclusion {
+&#x20;   background: #123b32;
+&#x20;   color: #00ff99;
+&#x20;   text-align: center;
+&#x20;   padding: 25px;
+&#x20;   border-radius: 15px;
+&#x20;   margin-top: 30px;
+&#x20;   font-size: 22px;
+&#x20;   font-weight: bold;
+}
+
+footer {
+&#x20;   text-align: center;
+&#x20;   color: #8192a9;
+&#x20;   margin-top: 40px;
+&#x20;   padding: 20px;
+}
+
+@media(max-width:600px) {
+&#x20;   body {
+&#x20;       padding: 12px;
+&#x20;   }
+
+&#x20;   header h1 {
+&#x20;       font-size: 22px;
+&#x20;   }
+
+&#x20;   th, td {
+&#x20;       padding: 9px 5px;
+&#x20;       font-size: 13px;
+&#x20;   }
+}
+\</style>
+
+\</head>
+
+\<body>
+
+\<div class="container">
+
+\<header>
+&#x20;   \<h1>OHM'S LAW MONITORING SYSTEM\</h1>
+&#x20;   \<p>IoT Based Live Electrical Parameter Monitoring\</p>
+\</header>
+
+\<h2>LIVE MONITORING\</h2>
+
+\<div class="dashboard">
+
+```
+<div class="card">
+    <h3>Voltage</h3>
+    <p id="voltage">0 V</p>
+</div>
+
+<div class="card">
+    <h3>Current</h3>
+    <p id="current">0 A</p>
+</div>
+
+<div class="card">
+    <h3>Resistance</h3>
+    <p id="resistance">0 Ω</p>
+</div>
+
+<div class="card">
+    <h3>Power</h3>
+    <p id="power">0 W</p>
+</div>
+```
+
+\</div>
+
+\<h2>OHM'S LAW CALCULATION\</h2>
+
+\<div class="calculation">
+&#x20;   \<p>\<b>Ohm's Law:\</b> V = I × R\</p>
+&#x20;   \<p>\<b>Voltage:\</b> V = Current × Resistance\</p>
+&#x20;   \<p>\<b>Current:\</b> I = Voltage / Resistance\</p>
+&#x20;   \<p>\<b>Resistance:\</b> R = Voltage / Current\</p>
+&#x20;   \<p>\<b>Power:\</b> P = Voltage × Current\</p>
+\</div>
+
+\<h2>CALCULATION TABLE\</h2>
+
+\<table>
+&#x20;   \<tr>
+&#x20;       \<th>Parameter\</th>
+&#x20;       \<th>Formula\</th>
+&#x20;       \<th>Result\</th>
+&#x20;   \</tr>
+
+```
+<tr>
+    <td>Voltage</td>
+    <td>V = I × R</td>
+    <td id="tableVoltage">0 V</td>
+</tr>
+
+<tr>
+    <td>Current</td>
+    <td>I = V / R</td>
+    <td id="tableCurrent">0 A</td>
+</tr>
+
+<tr>
+    <td>Resistance</td>
+    <td>R = V / I</td>
+    <td id="tableResistance">0 Ω</td>
+</tr>
+
+<tr>
+    <td>Power</td>
+    <td>P = V × I</td>
+    <td id="tablePower">0 W</td>
+</tr>
+```
+
+\</table>
+
+\<div class="conclusion">
+&#x20;   Hence, Ohm's Law is Proved.
+\</div>
+
+\<footer>
+&#x20;   \<p>Ohm's Law Monitoring System | IoT Project\</p>
+\</footer>
+
+\</div>
+
+\</body>
+\</html>
