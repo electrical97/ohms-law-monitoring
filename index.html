@@ -8,7 +8,6 @@
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.2.0/dist/chartjs-plugin-zoom.min.js"></script>
 
@@ -145,6 +144,8 @@ th,td{
 th{background:#203653;color:#00d4ff}
 td{color:#dce7f5}
 
+/* GRAPH LAYOUT */
+
 .graph-grid{
     display:grid;
     grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
@@ -158,23 +159,6 @@ td{color:#dce7f5}
     margin-bottom:15px
 }
 
-/* Larger graphs */
-
-.graph-canvas{
-    position:relative;
-    width:100%;
-    height:380px
-}
-
-.graph-canvas canvas{
-    width:100%!important;
-    height:100%!important
-}
-
-.vi-card{grid-column:1/-1}
-
-.vi-card .graph-canvas{height:440px}
-
 .graph-info{
     font-size:13px;
     color:#aab8cc;
@@ -185,6 +169,85 @@ td{color:#dce7f5}
     font-size:13px;
     color:#00ff99;
     margin:10px 0 15px
+}
+
+/* HORIZONTAL SCROLLABLE GRAPHS */
+
+.scroll-chart{
+    width:100%;
+    overflow-x:auto;
+    overflow-y:hidden;
+    -webkit-overflow-scrolling:touch;
+    overscroll-behavior-x:contain;
+    touch-action:pan-x pan-y;
+    scrollbar-width:thin;
+    scrollbar-color:#00a9d4 #203653;
+    border-radius:8px;
+    background:#101d30;
+    padding-bottom:8px;
+}
+
+.scroll-chart::-webkit-scrollbar{
+    height:9px;
+}
+
+.scroll-chart::-webkit-scrollbar-track{
+    background:#203653;
+    border-radius:10px;
+}
+
+.scroll-chart::-webkit-scrollbar-thumb{
+    background:#00a9d4;
+    border-radius:10px;
+}
+
+.scroll-chart canvas{
+    display:block;
+    max-width:none!important;
+}
+
+.graph-note{
+    color:#aab8cc;
+    font-size:12px;
+    margin:10px 0
+}
+
+/* VOLTAGE AND CURRENT */
+
+.voltage-card,.current-card{
+    grid-column:1/-1;
+}
+
+.line-scroll{
+    min-height:390px;
+}
+
+/* V-I GRAPH */
+
+.vi-card{grid-column:1/-1}
+
+.vi-canvas{
+    position:relative;
+    width:100%;
+    height:440px;
+}
+
+.vi-canvas canvas{
+    width:100%!important;
+    height:100%!important;
+}
+
+/* RESISTANCE AND POWER */
+
+.normal-canvas{
+    position:relative;
+    height:390px;
+    width:100%;
+}
+
+.normal-canvas canvas{
+    width:100%!important;
+    height:100%!important;
 }
 
 .average-card{text-align:center}
@@ -216,13 +279,27 @@ footer{
 }
 
 @media(max-width:600px){
+
     body{padding:12px}
     header h1{font-size:22px}
     h2{font-size:19px}
     .card p{font-size:26px}
-    .vi-card{grid-column:auto}
-    .graph-canvas{height:320px}
-    .vi-card .graph-canvas{height:350px}
+
+    .voltage-card,.current-card,.vi-card{
+        grid-column:auto
+    }
+
+    .line-scroll{min-height:340px}
+
+    .vi-canvas{height:350px}
+
+    .normal-canvas{height:340px}
+
+    .graph-grid{
+        grid-template-columns:1fr
+    }
+
+    button{padding:10px 12px;font-size:13px}
 }
 </style>
 </head>
@@ -236,6 +313,8 @@ footer{
     <div class="status" id="connectionStatus">Connecting to Firebase...</div>
 </header>
 
+<!-- LIVE MONITORING -->
+
 <h2>LIVE MONITORING</h2>
 
 <div class="dashboard">
@@ -245,9 +324,12 @@ footer{
     <div class="card"><h3>Power</h3><p id="power">0 W</p></div>
 </div>
 
+<!-- CALCULATION SETTINGS -->
+
 <h2>CALCULATION SETTINGS</h2>
 
 <div class="settings-card">
+
     <h3>Resistance-Based Calculation Control</h3>
 
     <div class="setting-row">
@@ -261,9 +343,13 @@ footer{
     </div>
 
     <button id="saveSettings">Save Settings</button>
+
     <p class="small-status" id="settingsStatus">Default threshold: 10 Ω</p>
     <p class="small-status" id="calculationStatus">Waiting for first reading...</p>
+
 </div>
+
+<!-- OHMS LAW CALCULATION -->
 
 <h2>OHM'S LAW CALCULATION</h2>
 
@@ -300,6 +386,8 @@ footer{
 
 </div>
 
+<!-- HISTORY -->
+
 <h2>PARAMETER READINGS HISTORY</h2>
 
 <div style="margin-bottom:12px">
@@ -308,6 +396,7 @@ footer{
 </div>
 
 <div class="table-box">
+
 <table>
     <thead>
         <tr>
@@ -318,83 +407,139 @@ footer{
             <th>Power (W)</th>
         </tr>
     </thead>
+
     <tbody id="readingsTable">
         <tr><td colspan="5">Waiting for readings...</td></tr>
     </tbody>
 </table>
+
 </div>
 
 <p class="small-status" id="historyStatus">History will be loaded from Firebase.</p>
+
+<!-- GRAPHS -->
 
 <h2>LIVE PARAMETER GRAPHS</h2>
 
 <div class="graph-grid">
 
-    <!-- V-I GRAPH -->
+    <!-- VOLTAGE GRAPH -->
+
+    <div class="graph-card voltage-card">
+
+        <h3>Voltage vs Time Graph</h3>
+
+        <p class="graph-info">
+            X-Axis: Time | Y-Axis: Voltage (V)
+            <br>Showing latest 30 points. Swipe left or right to scroll.
+        </p>
+
+        <p class="graph-time" id="voltageTime">Latest Reading Time: --</p>
+
+        <div class="scroll-chart line-scroll" id="voltageScroll">
+            <canvas id="voltageChart"></canvas>
+        </div>
+
+        <p class="graph-note">Use your finger to scroll horizontally on mobile.</p>
+
+        <button class="secondary" id="voltageLatest">Show Latest 30</button>
+        <button class="danger" id="clearVoltage">Clear Voltage Graph</button>
+
+        <p class="small-status" id="voltageStatus">Waiting for readings...</p>
+
+    </div>
+
+    <!-- CURRENT GRAPH -->
+
+    <div class="graph-card current-card">
+
+        <h3>Current vs Time Graph</h3>
+
+        <p class="graph-info">
+            X-Axis: Time | Y-Axis: Current (A)
+            <br>Showing latest 30 points. Swipe left or right to scroll.
+        </p>
+
+        <p class="graph-time" id="currentTime">Latest Reading Time: --</p>
+
+        <div class="scroll-chart line-scroll" id="currentScroll">
+            <canvas id="currentChart"></canvas>
+        </div>
+
+        <p class="graph-note">Use your finger to scroll horizontally on mobile.</p>
+
+        <button class="secondary" id="currentLatest">Show Latest 30</button>
+        <button class="danger" id="clearCurrent">Clear Current Graph</button>
+
+        <p class="small-status" id="currentStatus">Waiting for readings...</p>
+
+    </div>
+
+    <!-- V-I CHARACTERISTICS -->
 
     <div class="graph-card vi-card">
+
         <h3>V-I Characteristics Graph</h3>
 
         <p class="graph-info">
             X-Axis: Current (A) | Y-Axis: Voltage (V)
-            <br>Mouse wheel / pinch to zoom. Drag to pan.
+            <br>Showing latest 30 readings. Mouse wheel / pinch to zoom. Drag to pan.
         </p>
 
-        <p class="graph-time" id="viTime">
-            Latest Reading Time: --
-        </p>
+        <p class="graph-time" id="viTime">Latest Reading Time: --</p>
 
-        <div class="graph-canvas">
+        <div class="vi-canvas">
             <canvas id="viChart"></canvas>
         </div>
 
-        <div>
-            <button id="resetViZoom" class="secondary">Reset Zoom</button>
-            <button id="clearViGraph" class="danger">Clear V-I Graph</button>
-        </div>
+        <button class="secondary" id="resetViZoom">Reset Zoom</button>
+        <button class="danger" id="clearViGraph">Clear V-I Graph</button>
 
         <p class="small-status" id="viStatus">Waiting for data points...</p>
+
     </div>
 
     <!-- RESISTANCE GRAPH -->
 
     <div class="graph-card">
+
         <h3>Resistance Graph</h3>
 
-        <p class="graph-time" id="resistanceTime">
-            Latest Reading Time: --
-        </p>
+        <p class="graph-time" id="resistanceTime">Latest Reading Time: --</p>
 
-        <div class="graph-canvas">
+        <div class="normal-canvas">
             <canvas id="resistanceChart"></canvas>
         </div>
 
-        <button id="resetResistanceZoom" class="secondary">Reset Zoom</button>
-        <button id="clearResistance" class="danger">Clear Resistance Graph</button>
+        <button class="secondary" id="resetResistanceZoom">Reset Zoom</button>
+        <button class="danger" id="clearResistance">Clear Resistance Graph</button>
 
         <p class="small-status" id="resistanceStatus">Waiting for readings...</p>
+
     </div>
 
     <!-- POWER GRAPH -->
 
     <div class="graph-card">
+
         <h3>Power Graph</h3>
 
-        <p class="graph-time" id="powerTime">
-            Latest Reading Time: --
-        </p>
+        <p class="graph-time" id="powerTime">Latest Reading Time: --</p>
 
-        <div class="graph-canvas">
+        <div class="normal-canvas">
             <canvas id="powerChart"></canvas>
         </div>
 
-        <button id="resetPowerZoom" class="secondary">Reset Zoom</button>
-        <button id="clearPower" class="danger">Clear Power Graph</button>
+        <button class="secondary" id="resetPowerZoom">Reset Zoom</button>
+        <button class="danger" id="clearPower">Clear Power Graph</button>
 
         <p class="small-status" id="powerStatus">Waiting for readings...</p>
+
     </div>
 
 </div>
+
+<!-- AVERAGES -->
 
 <h2>AVERAGE VALUES</h2>
 
@@ -423,7 +568,7 @@ footer{
 // ==========================================
 
 const firebaseConfig = {
-    apiKey: "AIzaSyCxTUfiBu0cHa_3SRJBi6R5DUbU8nk2o8",
+    apiKey: "AIzaSyCxTUfiBu0cHa_3SRJBi6R5DUbU8nk2o",
     authDomain: "ohms-law-monitoring.firebaseapp.com",
     databaseURL: "https://ohms-law-monitoring-default-rtdb.asia-southeast1.firebasedatabase.app/",
     projectId: "ohms-law-monitoring",
@@ -448,33 +593,33 @@ let latestReading = null;
 
 let threshold = 10;
 let autoCalculation = true;
-
 let acceptedCalculation = null;
 
-const MAX_GRAPH_POINTS = 10;
+const MAX_GRAPH_POINTS = 30;
+const PIXELS_PER_POINT = 70;
 
 let knownReadingKeys = new Set();
-
-let viGraphKeys = new Set();
-let resistanceGraphKeys = new Set();
-let powerGraphKeys = new Set();
-
 let firstReadingsLoad = true;
 
-let viGraphCleared = false;
-let resistanceGraphCleared = false;
-let powerGraphCleared = false;
+const graphKeys = {
+    voltage:new Set(),
+    current:new Set(),
+    vi:new Set(),
+    resistance:new Set(),
+    power:new Set()
+};
 
 // ==========================================
 // 3. HELPER FUNCTIONS
 // ==========================================
 
-function numberValue(value, fallback = 0) {
+function numberValue(value,fallback=0) {
     const n = Number(value);
     return Number.isFinite(n) ? n : fallback;
 }
 
 function normalizedTimestamp(timestamp) {
+
     let time = Number(timestamp);
 
     if (!time || !Number.isFinite(time)) return 0;
@@ -485,6 +630,7 @@ function normalizedTimestamp(timestamp) {
 }
 
 function getDate(timestamp) {
+
     const time = normalizedTimestamp(timestamp);
 
     if (!time) return "--";
@@ -492,24 +638,21 @@ function getDate(timestamp) {
     return new Date(time).toLocaleString();
 }
 
-function getTime(timestamp) {
-    const time = normalizedTimestamp(timestamp);
-
-    if (!time) return "--";
-
-    return new Date(time).toLocaleTimeString();
-}
-
 function getShortTime(timestamp) {
+
     const time = normalizedTimestamp(timestamp);
 
     if (!time) return "--";
 
-    return new Date(time).toLocaleTimeString([], {
+    return new Date(time).toLocaleTimeString([],{
         hour:"2-digit",
         minute:"2-digit",
         second:"2-digit"
     });
+}
+
+function setText(id,value) {
+    document.getElementById(id).textContent = value;
 }
 
 // ==========================================
@@ -519,89 +662,208 @@ function getShortTime(timestamp) {
 Chart.register(ChartZoom);
 
 // ==========================================
-// 5. COMMON GRAPH OPTIONS
+// 5. COMMON CHART OPTIONS
 // ==========================================
 
 function commonZoomOptions() {
+
     return {
-        pan: {
-            enabled: true,
-            mode: "x"
+
+        pan:{
+            enabled:true,
+            mode:"x"
         },
-        zoom: {
-            wheel: {enabled:true},
-            pinch: {enabled:true},
-            drag: {enabled:true},
-            mode: "x"
+
+        zoom:{
+            wheel:{enabled:true},
+            pinch:{enabled:true},
+            drag:{enabled:true},
+            mode:"x"
         }
+
     };
 }
 
 // ==========================================
-// 6. RESISTANCE AND POWER GRAPHS
+// 6. SCROLLABLE LINE CHART CREATION
 // ==========================================
 
-function createLineChart(canvasId, label, color) {
+function createScrollableChart(canvasId,label,color,scrollId) {
 
-    return new Chart(document.getElementById(canvasId), {
+    const canvas = document.getElementById(canvasId);
+    const scrollBox = document.getElementById(scrollId);
 
-        type: "line",
+    return new Chart(canvas,{
 
-        data: {
-            labels: [],
+        type:"line",
 
-            datasets: [{
-                label: label,
-                data: [],
-                borderColor: color,
-                backgroundColor: "rgba(0,212,255,0.12)",
-                borderWidth: 2,
-                tension: 0.25,
-                pointRadius: 3,
-                pointHoverRadius: 6,
-                fill: true
+        data:{
+            labels:[],
+
+            datasets:[{
+
+                label:label,
+                data:[],
+                borderColor:color,
+                backgroundColor:color,
+                borderWidth:2,
+                tension:0.25,
+                pointRadius:4,
+                pointHoverRadius:7,
+                fill:false
+
             }]
         },
 
-        options: {
+        options:{
 
-            responsive: true,
-            maintainAspectRatio: false,
-            animation: false,
+            responsive:false,
+            maintainAspectRatio:false,
+            animation:false,
 
-            interaction: {
-                intersect: false,
-                mode: "index"
+            interaction:{
+                intersect:false,
+                mode:"index"
             },
 
-            scales: {
+            scales:{
 
-                x: {
-                    title: {
+                x:{
+
+                    title:{
                         display:true,
                         text:"Time",
                         color:"#00d4ff"
                     },
-                    ticks: {
+
+                    ticks:{
                         color:"#aab8cc",
-                        maxTicksLimit:8,
-                        maxRotation:45
+                        autoSkip:false,
+                        maxRotation:45,
+                        minRotation:35
                     },
-                    grid: {color:"#263e5e"}
+
+                    grid:{color:"#263e5e"}
+
                 },
 
-                y: {
-                    ticks: {color:"#aab8cc"},
-                    grid: {color:"#263e5e"}
+                y:{
+
+                    beginAtZero:false,
+
+                    ticks:{color:"#aab8cc"},
+
+                    grid:{color:"#263e5e"}
+
                 }
 
             },
 
-            plugins: {
-                legend: {
-                    labels: {color:"#fff"}
+            plugins:{
+
+                legend:{
+                    labels:{color:"#fff"}
                 },
-                zoom: commonZoomOptions()
+
+                tooltip:{
+                    callbacks:{
+                        label:function(context){
+                            return label + ": " + context.parsed.y;
+                        }
+                    }
+                }
+
+            }
+
+        }
+
+    });
+}
+
+// ==========================================
+// 7. CREATE VOLTAGE AND CURRENT GRAPHS
+// ==========================================
+
+const voltageChart = createScrollableChart(
+    "voltageChart",
+    "Voltage (V)",
+    "#00d4ff",
+    "voltageScroll"
+);
+
+const currentChart = createScrollableChart(
+    "currentChart",
+    "Current (A)",
+    "#00ff99",
+    "currentScroll"
+);
+
+// ==========================================
+// 8. RESISTANCE AND POWER CHARTS
+// ==========================================
+
+function createLineChart(canvasId,label,color) {
+
+    return new Chart(document.getElementById(canvasId),{
+
+        type:"line",
+
+        data:{
+            labels:[],
+
+            datasets:[{
+
+                label:label,
+                data:[],
+                borderColor:color,
+                backgroundColor:color,
+                borderWidth:2,
+                tension:0.25,
+                pointRadius:4,
+                pointHoverRadius:7,
+                fill:false
+
+            }]
+        },
+
+        options:{
+
+            responsive:true,
+            maintainAspectRatio:false,
+            animation:false,
+
+            interaction:{
+                intersect:false,
+                mode:"index"
+            },
+
+            scales:{
+
+                x:{
+                    title:{
+                        display:true,
+                        text:"Time",
+                        color:"#00d4ff"
+                    },
+                    ticks:{
+                        color:"#aab8cc",
+                        maxTicksLimit:8,
+                        maxRotation:45
+                    },
+                    grid:{color:"#263e5e"}
+                },
+
+                y:{
+                    beginAtZero:false,
+                    ticks:{color:"#aab8cc"},
+                    grid:{color:"#263e5e"}
+                }
+
+            },
+
+            plugins:{
+                legend:{labels:{color:"#fff"}},
+                zoom:commonZoomOptions()
             }
 
         }
@@ -622,93 +884,85 @@ const powerChart = createLineChart(
 );
 
 // ==========================================
-// 7. V-I CHARACTERISTICS GRAPH
+// 9. V-I CHARACTERISTICS GRAPH
 // ==========================================
 
-const viChart = new Chart(document.getElementById("viChart"), {
+const viChart = new Chart(document.getElementById("viChart"),{
 
-    type: "scatter",
+    type:"scatter",
 
-    data: {
+    data:{
 
-        datasets: [{
+        datasets:[{
 
-            label: "V-I Characteristics",
-
-            data: [],
-
-            showLine: true,
-
-            borderColor: "#00d4ff",
-            backgroundColor: "#00d4ff",
-
-            borderWidth: 2,
-            pointRadius: 4,
-            pointHoverRadius: 7,
-            tension: 0.15
+            label:"V-I Characteristics",
+            data:[],
+            showLine:true,
+            borderColor:"#00d4ff",
+            backgroundColor:"#00d4ff",
+            borderWidth:2,
+            pointRadius:4,
+            pointHoverRadius:7,
+            tension:0.15
 
         }]
 
     },
 
-    options: {
+    options:{
 
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: false,
+        responsive:true,
+        maintainAspectRatio:false,
+        animation:false,
 
-        scales: {
+        scales:{
 
-            x: {
+            x:{
+                type:"linear",
 
-                type: "linear",
-
-                title: {
+                title:{
                     display:true,
                     text:"Current (A)",
                     color:"#00d4ff"
                 },
 
-                ticks: {color:"#aab8cc"},
-                grid: {color:"#263e5e"}
-
+                ticks:{color:"#aab8cc"},
+                grid:{color:"#263e5e"}
             },
 
-            y: {
+            y:{
+                type:"linear",
 
-                type: "linear",
-
-                title: {
+                title:{
                     display:true,
                     text:"Voltage (V)",
                     color:"#00d4ff"
                 },
 
-                ticks: {color:"#aab8cc"},
-                grid: {color:"#263e5e"}
-
+                ticks:{color:"#aab8cc"},
+                grid:{color:"#263e5e"}
             }
 
         },
 
-        plugins: {
+        plugins:{
 
-            legend: {
-                labels: {color:"#fff"}
+            legend:{
+                labels:{color:"#fff"}
             },
 
-            tooltip: {
+            tooltip:{
 
-                callbacks: {
+                callbacks:{
 
-                    label: function(context) {
+                    label:function(context){
 
                         const point = context.raw;
 
                         return [
-                            "Current: " + point.x.toFixed(3) + " A",
-                            "Voltage: " + point.y.toFixed(2) + " V",
-                            "Time: " + (point.readingTime || "--")
+                            "Current: "+point.x.toFixed(3)+" A",
+                            "Voltage: "+point.y.toFixed(2)+" V",
+                            "Time: "+(point.readingTime || "--")
                         ];
 
                     }
@@ -717,14 +971,14 @@ const viChart = new Chart(document.getElementById("viChart"), {
 
             },
 
-            zoom: {
+            zoom:{
 
-                pan: {
+                pan:{
                     enabled:true,
                     mode:"xy"
                 },
 
-                zoom: {
+                zoom:{
                     wheel:{enabled:true},
                     pinch:{enabled:true},
                     drag:{enabled:true},
@@ -740,89 +994,189 @@ const viChart = new Chart(document.getElementById("viChart"), {
 });
 
 // ==========================================
-// 8. UPDATE RESISTANCE AND POWER GRAPHS
+// 10. UPDATE SCROLLABLE GRAPHS
 // ==========================================
 
-function updateLineChart(chart, readings, key) {
+const scrollInitialized = {
+    voltage:false,
+    current:false
+};
 
-    const visibleReadings = readings
-        .slice()
-        .sort((a,b) => {
-            return normalizedTimestamp(a.timestamp) -
-                   normalizedTimestamp(b.timestamp);
-        })
+function updateScrollableChart(chart,readings,key,parameter,scrollId) {
+
+    const scrollBox = document.getElementById(scrollId);
+
+    // Get latest 30 points
+
+    const visible = readings
+        .filter(r => graphKeys[key].has(r.key))
         .slice(-MAX_GRAPH_POINTS);
 
-    chart.data.labels = visibleReadings.map(r =>
+    // Check whether user is already at latest position
+
+    const wasAtLatest =
+        !scrollInitialized[key] ||
+        scrollBox.scrollWidth - scrollBox.clientWidth -
+        scrollBox.scrollLeft < 40;
+
+    // Preserve current scroll position
+
+    const previousScroll = scrollBox.scrollLeft;
+
+    // Set chart width based on number of points
+
+    const chartWidth = Math.max(
+        850,
+        visible.length * PIXELS_PER_POINT
+    );
+
+    const chartHeight =
+        window.innerWidth <= 600 ? 320 : 370;
+
+    chart.canvas.style.width = chartWidth + "px";
+    chart.canvas.style.height = chartHeight + "px";
+
+    chart.canvas.width = chartWidth;
+    chart.canvas.height = chartHeight;
+
+    chart.resize(chartWidth,chartHeight);
+
+    chart.data.labels = visible.map(r =>
         getShortTime(r.timestamp)
     );
 
-    chart.data.datasets[0].data =
-        visibleReadings.map(r => r[key]);
+    chart.data.datasets[0].data = visible.map(r =>
+        r[parameter]
+    );
 
     chart.update("none");
+
+    // Scroll to latest only if user was already at latest
+
+    requestAnimationFrame(function(){
+
+        if(wasAtLatest){
+
+            scrollBox.scrollLeft = scrollBox.scrollWidth;
+
+        }else{
+
+            scrollBox.scrollLeft = Math.min(
+                previousScroll,
+                scrollBox.scrollWidth - scrollBox.clientWidth
+            );
+
+        }
+
+    });
+
+    scrollInitialized[key] = true;
+
+    return visible.length;
 }
 
 // ==========================================
-// 9. CALCULATION DISPLAY
+// 11. UPDATE RESISTANCE AND POWER GRAPHS
+// ==========================================
+
+function updateNormalChart(chart,readings,key,parameter) {
+
+    const visible = readings
+        .filter(r => graphKeys[key].has(r.key))
+        .slice(-MAX_GRAPH_POINTS);
+
+    chart.data.labels = visible.map(r =>
+        getShortTime(r.timestamp)
+    );
+
+    chart.data.datasets[0].data = visible.map(r =>
+        r[parameter]
+    );
+
+    chart.update("none");
+
+    return visible.length;
+}
+
+// ==========================================
+// 12. CALCULATION DISPLAY
 // ==========================================
 
 function updateCalculationDisplay(data) {
 
-    if (!data) return;
+    if(!data) return;
 
     const v = data.voltage;
     const i = data.current;
     const r = data.resistance;
 
-    if (v <= 0 || i <= 0 || r <= 0) return;
+    if(v<=0 || i<=0 || r<=0) return;
 
-    const calculatedVoltage = i * r;
-    const calculatedCurrent = v / r;
-    const calculatedResistance = v / i;
-    const calculatedPower = v * i;
+    const calculatedVoltage = i*r;
+    const calculatedCurrent = v/r;
+    const calculatedResistance = v/i;
+    const calculatedPower = v*i;
 
-    document.getElementById("voltageCalculation").textContent =
-        `Calculation: ${i.toFixed(3)} × ${r.toFixed(2)}`;
+    setText(
+        "voltageCalculation",
+        `Calculation: ${i.toFixed(3)} × ${r.toFixed(2)}`
+    );
 
-    document.getElementById("voltageResult").textContent =
-        `Result: ${calculatedVoltage.toFixed(2)} V`;
+    setText(
+        "voltageResult",
+        `Result: ${calculatedVoltage.toFixed(2)} V`
+    );
 
-    document.getElementById("currentCalculation").textContent =
-        `Calculation: ${v.toFixed(2)} ÷ ${r.toFixed(2)}`;
+    setText(
+        "currentCalculation",
+        `Calculation: ${v.toFixed(2)} ÷ ${r.toFixed(2)}`
+    );
 
-    document.getElementById("currentResult").textContent =
-        `Result: ${calculatedCurrent.toFixed(3)} A`;
+    setText(
+        "currentResult",
+        `Result: ${calculatedCurrent.toFixed(3)} A`
+    );
 
-    document.getElementById("resistanceCalculation").textContent =
-        `Calculation: ${v.toFixed(2)} ÷ ${i.toFixed(3)}`;
+    setText(
+        "resistanceCalculation",
+        `Calculation: ${v.toFixed(2)} ÷ ${i.toFixed(3)}`
+    );
 
-    document.getElementById("resistanceResult").textContent =
-        `Result: ${calculatedResistance.toFixed(2)} Ω`;
+    setText(
+        "resistanceResult",
+        `Result: ${calculatedResistance.toFixed(2)} Ω`
+    );
 
-    document.getElementById("powerCalculation").textContent =
-        `Calculation: ${v.toFixed(2)} × ${i.toFixed(3)}`;
+    setText(
+        "powerCalculation",
+        `Calculation: ${v.toFixed(2)} × ${i.toFixed(3)}`
+    );
 
-    document.getElementById("powerResult").textContent =
-        `Result: ${calculatedPower.toFixed(2)} VA`;
+    setText(
+        "powerResult",
+        `Result: ${calculatedPower.toFixed(2)} VA`
+    );
+
 }
 
 // ==========================================
-// 10. RESISTANCE-BASED CALCULATION CONTROL
+// 13. RESISTANCE-BASED CALCULATION CONTROL
 // ==========================================
 
 function evaluateCalculation(reading) {
 
-    if (!reading || reading.resistance <= 0) return;
+    if(!reading || reading.resistance<=0) return;
 
-    if (!acceptedCalculation) {
+    if(!acceptedCalculation){
 
         acceptedCalculation = {...reading};
 
         updateCalculationDisplay(acceptedCalculation);
 
-        document.getElementById("calculationStatus").textContent =
-            "Initial calculation established.";
+        setText(
+            "calculationStatus",
+            "Initial calculation established."
+        );
 
         return;
     }
@@ -831,34 +1185,40 @@ function evaluateCalculation(reading) {
         reading.resistance - acceptedCalculation.resistance
     );
 
-    if (autoCalculation && difference > threshold) {
+    if(autoCalculation && difference>threshold){
 
         acceptedCalculation = {...reading};
 
         updateCalculationDisplay(acceptedCalculation);
 
-        document.getElementById("calculationStatus").textContent =
-            `Calculation updated. Resistance difference: ${difference.toFixed(2)} Ω`;
+        setText(
+            "calculationStatus",
+            `Calculation updated. Resistance difference: ${difference.toFixed(2)} Ω`
+        );
 
-    } else if (!autoCalculation) {
+    }else if(!autoCalculation){
 
-        document.getElementById("calculationStatus").textContent =
-            "Automatic calculation OFF. Previous calculation retained.";
+        setText(
+            "calculationStatus",
+            "Automatic calculation OFF. Previous calculation retained."
+        );
 
-    } else {
+    }else{
 
-        document.getElementById("calculationStatus").textContent =
-            `Waiting for resistance difference greater than ${threshold} Ω. Current difference: ${difference.toFixed(2)} Ω`;
+        setText(
+            "calculationStatus",
+            `Waiting for resistance difference greater than ${threshold} Ω. Current difference: ${difference.toFixed(2)} Ω`
+        );
 
     }
 
 }
 
 // ==========================================
-// 11. LOAD SETTINGS FROM FIREBASE
+// 14. LOAD SETTINGS FROM FIREBASE
 // ==========================================
 
-settingsRef.on("value", function(snapshot) {
+settingsRef.on("value",function(snapshot){
 
     const settings = snapshot.val() || {};
 
@@ -871,161 +1231,328 @@ settingsRef.on("value", function(snapshot) {
     document.getElementById("autoCalculation").checked =
         autoCalculation;
 
-    document.getElementById("settingsStatus").textContent =
-        "Settings loaded from Firebase.";
+    setText("settingsStatus","Settings loaded from Firebase.");
 
-    if (latestReading) {
+    if(latestReading){
         evaluateCalculation(latestReading);
     }
 
-}, function(error) {
+},function(error){
 
-    document.getElementById("settingsStatus").textContent =
-        "Settings Error: " + error.message;
+    setText("settingsStatus","Settings Error: "+error.message);
 
 });
 
 // ==========================================
-// 12. SAVE SETTINGS
+// 15. SAVE SETTINGS
 // ==========================================
 
-document.getElementById("saveSettings").addEventListener("click",async function() {
+document.getElementById("saveSettings").addEventListener("click",async function(){
 
     const inputThreshold = Number(
         document.getElementById("threshold").value
     );
 
-    if (!Number.isFinite(inputThreshold) || inputThreshold <= 0) {
+    if(!Number.isFinite(inputThreshold) || inputThreshold<=0){
 
         alert("Please enter a valid threshold greater than 0 Ω.");
-
         return;
+
     }
 
     const inputAuto =
         document.getElementById("autoCalculation").checked;
 
-    try {
+    try{
 
         await settingsRef.update({
+
             threshold:inputThreshold,
             autoCalculation:inputAuto
+
         });
 
-        document.getElementById("settingsStatus").textContent =
-            "Settings saved successfully!";
+        setText("settingsStatus","Settings saved successfully!");
 
-    } catch(error) {
+    }catch(error){
 
-        document.getElementById("settingsStatus").textContent =
-            "Save Error: " + error.message;
+        setText("settingsStatus","Save Error: "+error.message);
 
     }
 
 });
 
 // ==========================================
-// 13. CLEAR INDIVIDUAL GRAPH DATA
+// 16. CLEAR INDIVIDUAL GRAPH
 // ==========================================
 
-function clearGraph(chart, graphSet, statusId, clearedFlag) {
+function clearIndividualGraph(key,chart,statusId){
 
-    graphSet.clear();
+    graphKeys[key].clear();
 
-    chart.data.labels = [];
-
-    chart.data.datasets[0].data = [];
-
-    if (chart.resetZoom) {
+    if(chart.resetZoom){
         chart.resetZoom();
     }
 
-    chart.update();
+    if(key==="voltage" || key==="current"){
 
-    document.getElementById(statusId).textContent =
-        "Graph cleared. New readings will appear from now on.";
+        chart.data.labels = [];
+        chart.data.datasets[0].data = [];
 
-    return true;
+        chart.update();
+
+        const scrollId = key+"Scroll";
+
+        document.getElementById(scrollId).scrollLeft = 0;
+
+    }else{
+
+        chart.data.labels = [];
+        chart.data.datasets[0].data = [];
+
+        chart.update();
+
+    }
+
+    setText(
+        statusId,
+        "Graph cleared. New readings will appear from now on."
+    );
+
 }
 
-document.getElementById("clearViGraph").addEventListener("click",function() {
+// Voltage clear
 
-    if (!confirm("Clear V-I graph? Firebase readings will remain safe.")) return;
+document.getElementById("clearVoltage").addEventListener("click",function(){
 
-    clearGraph(viChart,viGraphKeys,"viStatus");
+    if(!confirm("Clear Voltage graph? Firebase readings will remain safe.")) return;
 
-    viGraphCleared = true;
+    clearIndividualGraph(
+        "voltage",
+        voltageChart,
+        "voltageStatus"
+    );
 
 });
 
-document.getElementById("clearResistance").addEventListener("click",function() {
+// Current clear
 
-    if (!confirm("Clear Resistance graph? Firebase history will remain safe.")) return;
+document.getElementById("clearCurrent").addEventListener("click",function(){
 
-    clearGraph(
+    if(!confirm("Clear Current graph? Firebase readings will remain safe.")) return;
+
+    clearIndividualGraph(
+        "current",
+        currentChart,
+        "currentStatus"
+    );
+
+});
+
+// V-I clear
+
+document.getElementById("clearViGraph").addEventListener("click",function(){
+
+    if(!confirm("Clear V-I graph? Firebase readings will remain safe.")) return;
+
+    clearIndividualGraph(
+        "vi",
+        viChart,
+        "viStatus"
+    );
+
+});
+
+// Resistance clear
+
+document.getElementById("clearResistance").addEventListener("click",function(){
+
+    if(!confirm("Clear Resistance graph? Firebase readings will remain safe.")) return;
+
+    clearIndividualGraph(
+        "resistance",
         resistanceChart,
-        resistanceGraphKeys,
         "resistanceStatus"
     );
 
-    resistanceGraphCleared = true;
-
 });
 
-document.getElementById("clearPower").addEventListener("click",function() {
+// Power clear
 
-    if (!confirm("Clear Power graph? Firebase history will remain safe.")) return;
+document.getElementById("clearPower").addEventListener("click",function(){
 
-    clearGraph(
+    if(!confirm("Clear Power graph? Firebase readings will remain safe.")) return;
+
+    clearIndividualGraph(
+        "power",
         powerChart,
-        powerGraphKeys,
         "powerStatus"
     );
 
-    powerGraphCleared = true;
+});
+
+// ==========================================
+// 17. SHOW LATEST 30 BUTTONS
+// ==========================================
+
+function showLatest(scrollId){
+
+    const box = document.getElementById(scrollId);
+
+    box.scrollTo({
+        left:box.scrollWidth,
+        behavior:"smooth"
+    });
+
+}
+
+document.getElementById("voltageLatest").addEventListener("click",function(){
+
+    showLatest("voltageScroll");
+
+});
+
+document.getElementById("currentLatest").addEventListener("click",function(){
+
+    showLatest("currentScroll");
 
 });
 
 // ==========================================
-// 14. RESET GRAPH ZOOM
+// 18. RESET ZOOM
 // ==========================================
 
-document.getElementById("resetViZoom").addEventListener("click",function() {
+document.getElementById("resetViZoom").addEventListener("click",function(){
     viChart.resetZoom();
 });
 
-document.getElementById("resetResistanceZoom").addEventListener("click",function() {
+document.getElementById("resetResistanceZoom").addEventListener("click",function(){
     resistanceChart.resetZoom();
 });
 
-document.getElementById("resetPowerZoom").addEventListener("click",function() {
+document.getElementById("resetPowerZoom").addEventListener("click",function(){
     powerChart.resetZoom();
 });
 
 // ==========================================
-// 15. FIREBASE READING HISTORY
+// 19. RESET EMPTY DASHBOARD
 // ==========================================
 
-readingsRef.on("value",function(snapshot) {
+function resetDashboard(){
+
+    latestReading = null;
+    acceptedCalculation = null;
+
+    setText("voltage","0 V");
+    setText("current","0 A");
+    setText("resistance","0 Ω");
+    setText("power","0 W");
+
+    setText("avgVoltage","0 V");
+    setText("avgCurrent","0 A");
+    setText("avgResistance","0 Ω");
+    setText("avgPower","0 W");
+
+    setText("calculationStatus","Waiting for first reading...");
+
+    [
+        "voltageCalculation",
+        "currentCalculation",
+        "resistanceCalculation",
+        "powerCalculation"
+    ].forEach(id=>{
+        setText(id,"Calculation: Waiting...");
+    });
+
+    [
+        "voltageResult",
+        "currentResult",
+        "resistanceResult",
+        "powerResult"
+    ].forEach(id=>{
+        setText(id,"Result: --");
+    });
+
+    [
+        "voltageTime",
+        "currentTime",
+        "viTime",
+        "resistanceTime",
+        "powerTime"
+    ].forEach(id=>{
+        setText(id,"Latest Reading Time: --");
+    });
+
+    setText(
+        "readingsTable",
+        "Waiting for readings..."
+    );
+
+    document.getElementById("readingsTable").innerHTML =
+        '<tr><td colspan="5">Waiting for readings...</td></tr>';
+
+    Object.values(graphKeys).forEach(set=>{
+        set.clear();
+    });
+
+    knownReadingKeys.clear();
+
+    firstReadingsLoad = true;
+
+    scrollInitialized.voltage = false;
+    scrollInitialized.current = false;
+
+    updateScrollableChart(
+        voltageChart,[],"voltage","voltage","voltageScroll"
+    );
+
+    updateScrollableChart(
+        currentChart,[],"current","current","currentScroll"
+    );
+
+    updateNormalChart(
+        resistanceChart,[],"resistance","resistance"
+    );
+
+    updateNormalChart(
+        powerChart,[],"power","power"
+    );
+
+    viChart.data.datasets[0].data = [];
+    viChart.update("none");
+
+    setText("voltageStatus","Waiting for readings...");
+    setText("currentStatus","Waiting for readings...");
+    setText("viStatus","Waiting for data points...");
+    setText("resistanceStatus","Waiting for readings...");
+    setText("powerStatus","Waiting for readings...");
+
+}
+
+// ==========================================
+// 20. FIREBASE READING HISTORY
+// ==========================================
+
+readingsRef.on("value",function(snapshot){
 
     const readings = [];
 
-    snapshot.forEach(function(child) {
+    snapshot.forEach(function(child){
 
         const item = child.val();
 
-        if (!item) return;
+        if(!item) return;
 
         const v = numberValue(item.voltage);
         const i = numberValue(item.current);
 
         const r = item.resistance != null
             ? numberValue(item.resistance)
-            : (i > 0 ? v / i : 0);
+            : (i>0 ? v/i : 0);
 
         const p = item.power != null
             ? numberValue(item.power)
-            : v * i;
+            : v*i;
 
         readings.push({
 
@@ -1040,11 +1567,12 @@ readingsRef.on("value",function(snapshot) {
 
     });
 
-    readings.sort((a,b) => {
+    readings.sort((a,b)=>{
 
-        if (a.timestamp && b.timestamp) {
-            return a.timestamp - b.timestamp;
-        }
+        const ta = normalizedTimestamp(a.timestamp);
+        const tb = normalizedTimestamp(b.timestamp);
+
+        if(ta && tb) return ta-tb;
 
         return String(a.key).localeCompare(String(b.key));
 
@@ -1052,121 +1580,57 @@ readingsRef.on("value",function(snapshot) {
 
     allReadings = readings;
 
-    document.getElementById("connectionStatus").textContent =
-        readings.length > 0
-        ? "● Live Data Connected"
-        : "Connected - Waiting for readings";
+    // CONNECTION STATUS
 
-    document.getElementById("historyStatus").textContent =
-        `Total saved readings: ${readings.length}`;
+    setText(
+        "connectionStatus",
+        readings.length>0
+            ? "● Live Data Connected"
+            : "Connected - Waiting for readings"
+    );
 
-    // ======================================
+    setText(
+        "historyStatus",
+        `Total saved readings: ${readings.length}`
+    );
+
     // EMPTY HISTORY
-    // ======================================
 
-    if (readings.length === 0) {
+    if(readings.length===0){
 
-        latestReading = null;
-        acceptedCalculation = null;
-
-        document.getElementById("readingsTable").innerHTML =
-            '<tr><td colspan="5">Waiting for readings...</td></tr>';
-
-        document.getElementById("voltage").textContent = "0 V";
-        document.getElementById("current").textContent = "0 A";
-        document.getElementById("resistance").textContent = "0 Ω";
-        document.getElementById("power").textContent = "0 W";
-
-        document.getElementById("calculationStatus").textContent =
-            "Waiting for first reading...";
-
-        document.getElementById("viTime").textContent =
-            "Latest Reading Time: --";
-
-        document.getElementById("resistanceTime").textContent =
-            "Latest Reading Time: --";
-
-        document.getElementById("powerTime").textContent =
-            "Latest Reading Time: --";
-
-        [
-            "voltageCalculation",
-            "currentCalculation",
-            "resistanceCalculation",
-            "powerCalculation"
-        ].forEach(id => {
-            document.getElementById(id).textContent =
-                "Calculation: Waiting...";
-        });
-
-        [
-            "voltageResult",
-            "currentResult",
-            "resistanceResult",
-            "powerResult"
-        ].forEach(id => {
-            document.getElementById(id).textContent =
-                "Result: --";
-        });
-
-        updateLineChart(resistanceChart,[],"resistance");
-        updateLineChart(powerChart,[],"power");
-
-        viChart.data.datasets[0].data = [];
-        viChart.update("none");
-
-        viGraphKeys.clear();
-        resistanceGraphKeys.clear();
-        powerGraphKeys.clear();
-
-        knownReadingKeys.clear();
-
-        firstReadingsLoad = true;
-
-        viGraphCleared = true;
-        resistanceGraphCleared = true;
-        powerGraphCleared = true;
+        resetDashboard();
 
         return;
+
     }
 
     // ======================================
-    // INITIAL GRAPH HISTORY
+    // ADD NEW READINGS TO GRAPH SETS
     // ======================================
 
-    const currentKeys = new Set(readings.map(r => r.key));
+    const currentKeys = new Set(readings.map(r=>r.key));
 
-    if (firstReadingsLoad) {
+    if(firstReadingsLoad){
 
-        readings.forEach(r => {
+        readings.forEach(function(r){
 
-            viGraphKeys.add(r.key);
-            resistanceGraphKeys.add(r.key);
-            powerGraphKeys.add(r.key);
+            Object.values(graphKeys).forEach(set=>{
+                set.add(r.key);
+            });
 
         });
 
         firstReadingsLoad = false;
 
-    } else {
+    }else{
 
-        readings.forEach(function(r) {
+        readings.forEach(function(r){
 
-            if (!knownReadingKeys.has(r.key)) {
+            if(!knownReadingKeys.has(r.key)){
 
-                if (!viGraphCleared) {
-                    viGraphKeys.add(r.key);
-                } else {
-                    viGraphKeys.add(r.key);
-                }
-
-                if (!resistanceGraphCleared) {
-                    resistanceGraphKeys.add(r.key);
-                }
-
-                if (!powerGraphCleared) {
-                    powerGraphKeys.add(r.key);
-                }
+                Object.values(graphKeys).forEach(set=>{
+                    set.add(r.key);
+                });
 
             }
 
@@ -1182,17 +1646,10 @@ readingsRef.on("value",function(snapshot) {
 
     latestReading = readings[readings.length-1];
 
-    document.getElementById("voltage").textContent =
-        latestReading.voltage.toFixed(2) + " V";
-
-    document.getElementById("current").textContent =
-        latestReading.current.toFixed(3) + " A";
-
-    document.getElementById("resistance").textContent =
-        latestReading.resistance.toFixed(2) + " Ω";
-
-    document.getElementById("power").textContent =
-        latestReading.power.toFixed(2) + " W";
+    setText("voltage",latestReading.voltage.toFixed(2)+" V");
+    setText("current",latestReading.current.toFixed(3)+" A");
+    setText("resistance",latestReading.resistance.toFixed(2)+" Ω");
+    setText("power",latestReading.power.toFixed(2)+" W");
 
     // ======================================
     // CALCULATION
@@ -1201,26 +1658,28 @@ readingsRef.on("value",function(snapshot) {
     evaluateCalculation(latestReading);
 
     // ======================================
-    // READING TABLE
+    // HISTORY TABLE
     // ======================================
 
     const table = document.getElementById("readingsTable");
 
     table.innerHTML = "";
 
-    readings.slice().reverse().slice(0,100).forEach(function(r) {
+    readings.slice().reverse().slice(0,100).forEach(function(r){
 
         const tr = document.createElement("tr");
 
         const values = [
+
             getDate(r.timestamp),
             r.voltage.toFixed(2),
             r.current.toFixed(3),
             r.resistance.toFixed(2),
             r.power.toFixed(2)
+
         ];
 
-        values.forEach(function(value) {
+        values.forEach(function(value){
 
             const td = document.createElement("td");
 
@@ -1240,76 +1699,113 @@ readingsRef.on("value",function(snapshot) {
 
     const count = readings.length;
 
-    const avg = key =>
-        readings.reduce((sum,r) => sum+r[key],0)/count;
+    const avg = key=>
+        readings.reduce((sum,r)=>sum+r[key],0)/count;
 
-    document.getElementById("avgVoltage").textContent =
-        avg("voltage").toFixed(2)+" V";
-
-    document.getElementById("avgCurrent").textContent =
-        avg("current").toFixed(3)+" A";
-
-    document.getElementById("avgResistance").textContent =
-        avg("resistance").toFixed(2)+" Ω";
-
-    document.getElementById("avgPower").textContent =
-        avg("power").toFixed(2)+" W";
+    setText("avgVoltage",avg("voltage").toFixed(2)+" V");
+    setText("avgCurrent",avg("current").toFixed(3)+" A");
+    setText("avgResistance",avg("resistance").toFixed(2)+" Ω");
+    setText("avgPower",avg("power").toFixed(2)+" W");
 
     // ======================================
-    // RESISTANCE GRAPH - MOVING TIME WINDOW
+    // VOLTAGE GRAPH
     // ======================================
 
-    const resistanceData = readings.filter(r =>
-        resistanceGraphKeys.has(r.key)
+    const voltageCount = updateScrollableChart(
+        voltageChart,
+        readings,
+        "voltage",
+        "voltage",
+        "voltageScroll"
     );
 
-    updateLineChart(
+    setText(
+        "voltageTime",
+        "Latest Reading Time: "+getDate(latestReading.timestamp)
+    );
+
+    setText(
+        "voltageStatus",
+        `Graph Points: ${voltageCount} | Maximum: 30`
+    );
+
+    // ======================================
+    // CURRENT GRAPH
+    // ======================================
+
+    const currentCount = updateScrollableChart(
+        currentChart,
+        readings,
+        "current",
+        "current",
+        "currentScroll"
+    );
+
+    setText(
+        "currentTime",
+        "Latest Reading Time: "+getDate(latestReading.timestamp)
+    );
+
+    setText(
+        "currentStatus",
+        `Graph Points: ${currentCount} | Maximum: 30`
+    );
+
+    // ======================================
+    // RESISTANCE GRAPH
+    // ======================================
+
+    const resistanceCount = updateNormalChart(
         resistanceChart,
-        resistanceData,
+        readings,
+        "resistance",
         "resistance"
     );
 
-    document.getElementById("resistanceTime").textContent =
-        "Latest Reading Time: " + getDate(latestReading.timestamp);
-
-    document.getElementById("resistanceStatus").textContent =
-        "Graph Points: " +
-        Math.min(resistanceData.length,MAX_GRAPH_POINTS);
-
-    // ======================================
-    // POWER GRAPH - MOVING TIME WINDOW
-    // ======================================
-
-    const powerData = readings.filter(r =>
-        powerGraphKeys.has(r.key)
+    setText(
+        "resistanceTime",
+        "Latest Reading Time: "+getDate(latestReading.timestamp)
     );
 
-    updateLineChart(
+    setText(
+        "resistanceStatus",
+        `Graph Points: ${resistanceCount} | Maximum: 30`
+    );
+
+    // ======================================
+    // POWER GRAPH
+    // ======================================
+
+    const powerCount = updateNormalChart(
         powerChart,
-        powerData,
+        readings,
+        "power",
         "power"
     );
 
-    document.getElementById("powerTime").textContent =
-        "Latest Reading Time: " + getDate(latestReading.timestamp);
+    setText(
+        "powerTime",
+        "Latest Reading Time: "+getDate(latestReading.timestamp)
+    );
 
-    document.getElementById("powerStatus").textContent =
-        "Graph Points: " +
-        Math.min(powerData.length,MAX_GRAPH_POINTS);
+    setText(
+        "powerStatus",
+        `Graph Points: ${powerCount} | Maximum: 30`
+    );
 
     // ======================================
-    // V-I CHARACTERISTICS - MOVING POINTS
+    // V-I CHARACTERISTICS GRAPH
     // ======================================
 
     const viData = readings
 
-        .filter(r => viGraphKeys.has(r.key))
+        .filter(r=>graphKeys.vi.has(r.key))
 
-        .filter(r => r.current > 0 && r.voltage > 0)
+        .filter(r=>r.current>0 && r.voltage>0)
 
         .slice(-MAX_GRAPH_POINTS)
 
-        .map(r => ({
+        .map(r=>({
 
             x:r.current,
             y:r.voltage,
@@ -1321,56 +1817,66 @@ readingsRef.on("value",function(snapshot) {
 
     viChart.update("none");
 
-    document.getElementById("viTime").textContent =
-        "Latest Reading Time: " + getDate(latestReading.timestamp);
+    setText(
+        "viTime",
+        "Latest Reading Time: "+getDate(latestReading.timestamp)
+    );
 
-    document.getElementById("viStatus").textContent =
-        "V-I Graph Points: " + viData.length +
-        " | Showing latest " + MAX_GRAPH_POINTS + " points maximum.";
+    setText(
+        "viStatus",
+        `V-I Graph Points: ${viData.length} | Maximum: 30`
+    );
 
-},function(error) {
+},function(error){
 
-    document.getElementById("connectionStatus").textContent =
-        "Firebase Error: " + error.message;
+    setText(
+        "connectionStatus",
+        "Firebase Error: "+error.message
+    );
 
 });
 
 // ==========================================
-// 16. DOWNLOAD HISTORY AS CSV
+// 21. DOWNLOAD HISTORY AS CSV
 // ==========================================
 
-document.getElementById("downloadData").addEventListener("click",function() {
+document.getElementById("downloadData").addEventListener("click",function(){
 
-    if (allReadings.length === 0) {
+    if(allReadings.length===0){
 
         alert("No reading data available to download.");
 
         return;
+
     }
 
     const rows = [[
+
         "Date & Time",
         "Voltage (V)",
         "Current (A)",
         "Resistance (Ohm)",
         "Power (W)"
+
     ]];
 
-    allReadings.forEach(function(r) {
+    allReadings.forEach(function(r){
 
         rows.push([
+
             getDate(r.timestamp),
             r.voltage,
             r.current,
             r.resistance,
             r.power
+
         ]);
 
     });
 
-    const csv = rows.map(row =>
-        row.map(value =>
-            '"' + String(value).replace(/"/g,'""') + '"'
+    const csv = rows.map(row=>
+        row.map(value=>
+            '"'+String(value).replace(/"/g,'""')+'"'
         ).join(",")
     ).join("\r\n");
 
@@ -1392,49 +1898,42 @@ document.getElementById("downloadData").addEventListener("click",function() {
 
     link.remove();
 
-    setTimeout(() => URL.revokeObjectURL(url),1000);
+    setTimeout(()=>{
+        URL.revokeObjectURL(url);
+    },1000);
 
 });
 
 // ==========================================
-// 17. CLEAR ALL FIREBASE READING HISTORY
+// 22. CLEAR ALL FIREBASE READING HISTORY
 // ==========================================
 
-document.getElementById("clearData").addEventListener("click",async function() {
+document.getElementById("clearData").addEventListener("click",async function(){
 
     const confirmed = confirm(
         "Are you sure you want to delete ALL reading history from Firebase? This cannot be undone."
     );
 
-    if (!confirmed) return;
+    if(!confirmed) return;
 
-    try {
+    try{
 
         await readingsRef.remove();
 
         allReadings = [];
 
-        acceptedCalculation = null;
-        latestReading = null;
+        resetDashboard();
 
-        viGraphKeys.clear();
-        resistanceGraphKeys.clear();
-        powerGraphKeys.clear();
-
-        knownReadingKeys.clear();
-
-        viGraphCleared = true;
-        resistanceGraphCleared = true;
-        powerGraphCleared = true;
-
-        document.getElementById("historyStatus").textContent =
-            "All reading history deleted.";
+        setText(
+            "historyStatus",
+            "All reading history deleted."
+        );
 
         alert("Reading history cleared successfully.");
 
-    } catch(error) {
+    }catch(error){
 
-        alert("Unable to clear data: " + error.message);
+        alert("Unable to clear data: "+error.message);
 
     }
 
