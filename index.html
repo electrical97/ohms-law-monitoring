@@ -1,230 +1,545 @@
-\<!DOCTYPE html>
 
-\<html lang="en"> \<head> \<meta charset="UTF-8"> \<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ohm's Law Monitoring System</title>
 
-\<title>Ohm's Law Monitoring System\</title>
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
-\<style>
-\* {
-&#x20;   margin: 0;
-&#x20;   padding: 0;
-&#x20;   box-sizing: border-box;
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 body {
-&#x20;   font-family: Arial, sans-serif;
-&#x20;   background: #0b1120;
-&#x20;   color: white;
-&#x20;   padding: 20px;
-}
-
-header {
-&#x20;   text-align: center;
-&#x20;   padding: 25px;
-&#x20;   background: #17243a;
-&#x20;   border-radius: 15px;
-&#x20;   border-bottom: 3px solid #00d4ff;
-}
-
-header h1 {
-&#x20;   color: #00d4ff;
-&#x20;   font-size: 27px;
-}
-
-header p {
-&#x20;   color: #aab8cc;
-&#x20;   margin-top: 10px;
+    font-family: Arial, sans-serif;
+    background: #080f1e;
+    color: #ffffff;
+    padding: 20px;
 }
 
 .container {
-&#x20;   max-width: 1100px;
-&#x20;   margin: auto;
+    max-width: 1200px;
+    margin: auto;
+}
+
+header {
+    text-align: center;
+    padding: 30px 15px;
+    background: linear-gradient(135deg, #172b49, #102039);
+    border: 1px solid #263e5e;
+    border-bottom: 3px solid #00d4ff;
+    border-radius: 16px;
+}
+
+header h1 {
+    color: #00d4ff;
+    font-size: 28px;
+}
+
+header p {
+    color: #aab8cc;
+    margin-top: 10px;
+}
+
+.status {
+    margin-top: 15px;
+    color: #ffcc66;
+    font-size: 14px;
 }
 
 h2 {
-&#x20;   color: #00d4ff;
-&#x20;   margin: 30px 0 20px;
+    color: #00d4ff;
+    margin: 32px 0 18px;
+    font-size: 21px;
 }
 
 .dashboard {
-&#x20;   display: grid;
-&#x20;   grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-&#x20;   gap: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 18px;
+}
+
+.card, .section {
+    background: #14233a;
+    border: 1px solid #263e5e;
+    border-radius: 15px;
+    padding: 23px;
 }
 
 .card {
-&#x20;   background: #17243a;
-&#x20;   padding: 25px;
-&#x20;   border-radius: 15px;
-&#x20;   text-align: center;
-&#x20;   border: 1px solid #263c59;
+    text-align: center;
 }
 
 .card h3 {
-&#x20;   color: #aab8cc;
-&#x20;   margin-bottom: 18px;
+    color: #aab8cc;
+    font-size: 17px;
+    margin-bottom: 18px;
 }
 
 .card p {
-&#x20;   color: #00d4ff;
-&#x20;   font-size: 30px;
-&#x20;   font-weight: bold;
+    color: #00d4ff;
+    font-size: 30px;
+    font-weight: bold;
+    overflow-wrap: anywhere;
 }
 
 .calculation {
-&#x20;   background: #17243a;
-&#x20;   padding: 20px;
-&#x20;   border-radius: 15px;
-&#x20;   line-height: 2;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.formula {
+    background: #14233a;
+    border: 1px solid #263e5e;
+    border-radius: 12px;
+    padding: 18px;
+    line-height: 1.8;
+}
+
+.formula h3 {
+    color: #00d4ff;
+    margin-bottom: 8px;
+}
+
+.table-box {
+    overflow-x: auto;
+    background: #14233a;
+    border-radius: 12px;
+    border: 1px solid #263e5e;
 }
 
 table {
-&#x20;   width: 100%;
-&#x20;   border-collapse: collapse;
-&#x20;   background: #17243a;
-&#x20;   margin-top: 15px;
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 650px;
 }
 
 th, td {
-&#x20;   border: 1px solid #344963;
-&#x20;   padding: 15px;
-&#x20;   text-align: center;
+    padding: 14px;
+    text-align: center;
+    border-bottom: 1px solid #344963;
 }
 
 th {
-&#x20;   color: #00d4ff;
-&#x20;   background: #20334e;
+    background: #203653;
+    color: #00d4ff;
+}
+
+td {
+    color: #dce7f5;
+}
+
+.graph-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 18px;
+}
+
+.graph-card {
+    background: #14233a;
+    border: 1px solid #263e5e;
+    border-radius: 15px;
+    padding: 18px;
+    min-width: 0;
+}
+
+.graph-card h3 {
+    color: #00d4ff;
+    margin-bottom: 15px;
+}
+
+.graph-card canvas {
+    width: 100% !important;
+    max-height: 230px;
+}
+
+.average-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.average-card {
+    background: #14233a;
+    border: 1px solid #263e5e;
+    padding: 20px;
+    text-align: center;
+    border-radius: 12px;
+}
+
+.average-card h3 {
+    color: #aab8cc;
+    margin-bottom: 12px;
+}
+
+.average-card p {
+    color: #00d4ff;
+    font-size: 24px;
+    font-weight: bold;
 }
 
 .conclusion {
-&#x20;   background: #123b32;
-&#x20;   color: #00ff99;
-&#x20;   text-align: center;
-&#x20;   padding: 25px;
-&#x20;   border-radius: 15px;
-&#x20;   margin-top: 30px;
-&#x20;   font-size: 22px;
-&#x20;   font-weight: bold;
+    margin-top: 35px;
+    padding: 28px 15px;
+    text-align: center;
+    background: #123b32;
+    color: #00ff99;
+    border: 1px solid #087d5a;
+    border-radius: 15px;
+    font-size: 23px;
+    font-weight: bold;
 }
 
 footer {
-&#x20;   text-align: center;
-&#x20;   color: #8192a9;
-&#x20;   margin-top: 40px;
-&#x20;   padding: 20px;
+    text-align: center;
+    color: #8192a9;
+    margin-top: 35px;
+    padding: 20px;
+    line-height: 1.8;
 }
 
-@media(max-width:600px) {
-&#x20;   body {
-&#x20;       padding: 12px;
-&#x20;   }
+@media(max-width: 600px) {
+    body {
+        padding: 12px;
+    }
 
-&#x20;   header h1 {
-&#x20;       font-size: 22px;
-&#x20;   }
+    header h1 {
+        font-size: 22px;
+    }
 
-&#x20;   th, td {
-&#x20;       padding: 9px 5px;
-&#x20;       font-size: 13px;
-&#x20;   }
+    h2 {
+        font-size: 19px;
+    }
+
+    .card p {
+        font-size: 26px;
+    }
 }
-\</style>
+</style>
+</head>
 
-\</head>
+<body>
+<div class="container">
 
-\<body>
+<header>
+    <h1>OHM'S LAW MONITORING SYSTEM</h1>
+    <p>IoT Based Live Electrical Parameter Monitoring</p>
+    <div class="status" id="connectionStatus">
+        Connecting to Firebase...
+    </div>
+</header>
 
-\<div class="container">
+<h2>LIVE MONITORING</h2>
 
-\<header>
-&#x20;   \<h1>OHM'S LAW MONITORING SYSTEM\</h1>
-&#x20;   \<p>IoT Based Live Electrical Parameter Monitoring\</p>
-\</header>
+<div class="dashboard">
+    <div class="card">
+        <h3>Voltage</h3>
+        <p id="voltage">0 V</p>
+    </div>
 
-\<h2>LIVE MONITORING\</h2>
+    <div class="card">
+        <h3>Current</h3>
+        <p id="current">0 A</p>
+    </div>
 
-\<div class="dashboard">
+    <div class="card">
+        <h3>Resistance</h3>
+        <p id="resistance">0 Ω</p>
+    </div>
 
-```
-<div class="card">
-    <h3>Voltage</h3>
-    <p id="voltage">0 V</p>
+    <div class="card">
+        <h3>Power</h3>
+        <p id="power">0 W</p>
+    </div>
 </div>
 
-<div class="card">
-    <h3>Current</h3>
-    <p id="current">0 A</p>
+<h2>OHM'S LAW CALCULATION</h2>
+
+<div class="calculation">
+    <div class="formula">
+        <h3>Voltage</h3>
+        <p>V = I × R</p>
+        <p>Voltage = Current × Resistance</p>
+    </div>
+
+    <div class="formula">
+        <h3>Current</h3>
+        <p>I = V / R</p>
+        <p>Current = Voltage / Resistance</p>
+    </div>
+
+    <div class="formula">
+        <h3>Resistance</h3>
+        <p>R = V / I</p>
+        <p>Resistance = Voltage / Current</p>
+    </div>
+
+    <div class="formula">
+        <h3>Power</h3>
+        <p>P = V × I</p>
+        <p>Power = Voltage × Current</p>
+    </div>
 </div>
 
-<div class="card">
-    <h3>Resistance</h3>
-    <p id="resistance">0 Ω</p>
+<h2>PARAMETER READINGS TABLE</h2>
+
+<div class="table-box">
+<table>
+    <thead>
+        <tr>
+            <th>Time</th>
+            <th>Voltage (V)</th>
+            <th>Current (A)</th>
+            <th>Resistance (Ω)</th>
+            <th>Power (W)</th>
+        </tr>
+    </thead>
+    <tbody id="readingsTable">
+        <tr>
+            <td colspan="5">Waiting for readings...</td>
+        </tr>
+    </tbody>
+</table>
 </div>
 
-<div class="card">
-    <h3>Power</h3>
-    <p id="power">0 W</p>
+<h2>LIVE PARAMETER GRAPHS</h2>
+
+<div class="graph-grid">
+    <div class="graph-card">
+        <h3>Voltage Graph</h3>
+        <canvas id="voltageChart"></canvas>
+    </div>
+
+    <div class="graph-card">
+        <h3>Current Graph</h3>
+        <canvas id="currentChart"></canvas>
+    </div>
+
+    <div class="graph-card">
+        <h3>Resistance Graph</h3>
+        <canvas id="resistanceChart"></canvas>
+    </div>
+
+    <div class="graph-card">
+        <h3>Power Graph</h3>
+        <canvas id="powerChart"></canvas>
+    </div>
 </div>
-```
 
-\</div>
+<h2>AVERAGE VALUES</h2>
 
-\<h2>OHM'S LAW CALCULATION\</h2>
+<div class="average-grid">
+    <div class="average-card">
+        <h3>Average Voltage</h3>
+        <p id="avgVoltage">0 V</p>
+    </div>
 
-\<div class="calculation">
-&#x20;   \<p>\<b>Ohm's Law:\</b> V = I × R\</p>
-&#x20;   \<p>\<b>Voltage:\</b> V = Current × Resistance\</p>
-&#x20;   \<p>\<b>Current:\</b> I = Voltage / Resistance\</p>
-&#x20;   \<p>\<b>Resistance:\</b> R = Voltage / Current\</p>
-&#x20;   \<p>\<b>Power:\</b> P = Voltage × Current\</p>
-\</div>
+    <div class="average-card">
+        <h3>Average Current</h3>
+        <p id="avgCurrent">0 A</p>
+    </div>
 
-\<h2>CALCULATION TABLE\</h2>
+    <div class="average-card">
+        <h3>Average Resistance</h3>
+        <p id="avgResistance">0 Ω</p>
+    </div>
 
-\<table>
-&#x20;   \<tr>
-&#x20;       \<th>Parameter\</th>
-&#x20;       \<th>Formula\</th>
-&#x20;       \<th>Result\</th>
-&#x20;   \</tr>
+    <div class="average-card">
+        <h3>Average Power</h3>
+        <p id="avgPower">0 W</p>
+    </div>
+</div>
 
-```
-<tr>
-    <td>Voltage</td>
-    <td>V = I × R</td>
-    <td id="tableVoltage">0 V</td>
-</tr>
+<div class="conclusion">
+    Hence, Ohm's Law is Proved.
+</div>
 
-<tr>
-    <td>Current</td>
-    <td>I = V / R</td>
-    <td id="tableCurrent">0 A</td>
-</tr>
+<footer>
+    <p>Ohm's Law Monitoring System | IoT Project</p>
+    <p>Designed for Live Electrical Parameter Monitoring</p>
+</footer>
 
-<tr>
-    <td>Resistance</td>
-    <td>R = V / I</td>
-    <td id="tableResistance">0 Ω</td>
-</tr>
+</div>
 
-<tr>
-    <td>Power</td>
-    <td>P = V × I</td>
-    <td id="tablePower">0 W</td>
-</tr>
-```
+<script>
+// 1. Add your Firebase configuration here
+const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+    databaseURL: "YOUR_DATABASE_URL",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT_ID.appspot.com",
+    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+    appId: "YOUR_APP_ID"
+};
 
-\</table>
+// 2. Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
 
-\<div class="conclusion">
-&#x20;   Hence, Ohm's Law is Proved.
-\</div>
+// 3. Readings path
+const readingsRef = database.ref("ohmsLaw/readings");
 
-\<footer>
-&#x20;   \<p>Ohm's Law Monitoring System | IoT Project\</p>
-\</footer>
+// 4. Create graphs
+function createChart(canvasId, label) {
+    return new Chart(document.getElementById(canvasId), {
+        type: "line",
+        data: {
+            labels: [],
+            datasets: [{
+                label: label,
+                data: [],
+                borderColor: "#00d4ff",
+                backgroundColor: "rgba(0,212,255,0.12)",
+                borderWidth: 2,
+                tension: 0.3,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+                x: {
+                    ticks: { color: "#aab8cc" },
+                    grid: { color: "#263e5e" }
+                },
+                y: {
+                    ticks: { color: "#aab8cc" },
+                    grid: { color: "#263e5e" }
+                }
+            },
+            plugins: {
+                legend: {
+                    labels: { color: "#ffffff" }
+                }
+            }
+        }
+    });
+}
 
-\</div>
+const voltageChart = createChart("voltageChart", "Voltage (V)");
+const currentChart = createChart("currentChart", "Current (A)");
+const resistanceChart = createChart("resistanceChart", "Resistance (Ω)");
+const powerChart = createChart("powerChart", "Power (W)");
 
-\</body>
-\</html>
+// 5. Update graph data
+function updateChart(chart, readings, key) {
+    chart.data.labels = readings.map((r, i) => i + 1);
+    chart.data.datasets[0].data = readings.map(r => r[key]);
+    chart.update();
+}
+
+// 6. Read Firebase data
+readingsRef.limitToLast(100).on("value", function(snapshot) {
+
+    const readings = [];
+
+    snapshot.forEach(function(child) {
+        const item = child.val();
+
+        const v = Number(item.voltage) || 0;
+        const i = Number(item.current) || 0;
+
+        const r = item.resistance != null
+            ? Number(item.resistance)
+            : (i !== 0 ? v / i : 0);
+
+        const p = item.power != null
+            ? Number(item.power)
+            : v * i;
+
+        readings.push({
+            voltage: v,
+            current: i,
+            resistance: r,
+            power: p,
+            timestamp: Number(item.timestamp) || 0
+        });
+    });
+
+    document.getElementById("connectionStatus").textContent =
+        readings.length > 0
+        ? "● Live Data Connected"
+        : "Connected - Waiting for readings";
+
+    if (readings.length === 0) return;
+
+    // Latest readings
+    const latest = readings[readings.length - 1];
+
+    document.getElementById("voltage").textContent =
+        latest.voltage.toFixed(2) + " V";
+
+    document.getElementById("current").textContent =
+        latest.current.toFixed(3) + " A";
+
+    document.getElementById("resistance").textContent =
+        latest.resistance.toFixed(2) + " Ω";
+
+    document.getElementById("power").textContent =
+        latest.power.toFixed(2) + " W";
+
+    // Readings table
+    const table = document.getElementById("readingsTable");
+    table.innerHTML = "";
+
+    readings.slice().reverse().slice(0, 10).forEach(function(r) {
+        const time = r.timestamp
+            ? new Date(r.timestamp).toLocaleTimeString()
+            : "--";
+
+        table.innerHTML += `
+            <tr>
+                <td>${time}</td>
+                <td>${r.voltage.toFixed(2)}</td>
+                <td>${r.current.toFixed(3)}</td>
+                <td>${r.resistance.toFixed(2)}</td>
+                <td>${r.power.toFixed(2)}</td>
+            </tr>
+        `;
+    });
+
+    // Average values
+    const count = readings.length;
+
+    const avg = key =>
+        readings.reduce((sum, r) => sum + r[key], 0) / count;
+
+    document.getElementById("avgVoltage").textContent =
+        avg("voltage").toFixed(2) + " V";
+
+    document.getElementById("avgCurrent").textContent =
+        avg("current").toFixed(3) + " A";
+
+    document.getElementById("avgResistance").textContent =
+        avg("resistance").toFixed(2) + " Ω";
+
+    document.getElementById("avgPower").textContent =
+        avg("power").toFixed(2) + " W";
+
+    // Update graphs
+    updateChart(voltageChart, readings, "voltage");
+    updateChart(currentChart, readings, "current");
+    updateChart(resistanceChart, readings, "resistance");
+    updateChart(powerChart, readings, "power");
+
+}, function(error) {
+    document.getElementById("connectionStatus").textContent =
+        "Firebase Error: " + error.message;
+});
+</script>
+
+</body>
+</html>
