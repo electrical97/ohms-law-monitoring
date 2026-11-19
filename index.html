@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,222 +6,169 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ohm's Law Monitoring System</title>
 
-<!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
-<!-- Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.2.0/dist/chartjs-plugin-zoom.min.js"></script>
 
 <style>
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+*{margin:0;padding:0;box-sizing:border-box}
+
+body{
+    font-family:Arial,sans-serif;
+    background:#080f1e;
+    color:#fff;
+    padding:20px
 }
 
-body {
-    font-family: Arial, sans-serif;
-    background: #080f1e;
-    color: #ffffff;
-    padding: 20px;
+.container{max-width:1200px;margin:auto}
+
+header{
+    text-align:center;
+    padding:30px 15px;
+    background:linear-gradient(135deg,#172b49,#102039);
+    border:1px solid #263e5e;
+    border-bottom:3px solid #00d4ff;
+    border-radius:16px
 }
 
-.container {
-    max-width: 1200px;
-    margin: auto;
+header h1{color:#00d4ff;font-size:28px}
+header p{color:#aab8cc;margin-top:10px}
+.status{margin-top:15px;color:#ffcc66;font-size:14px}
+
+h2{
+    color:#00d4ff;
+    margin:32px 0 18px;
+    font-size:21px
 }
 
-header {
-    text-align: center;
-    padding: 30px 15px;
-    background: linear-gradient(135deg, #172b49, #102039);
-    border: 1px solid #263e5e;
-    border-bottom: 3px solid #00d4ff;
-    border-radius: 16px;
+.dashboard,.calculation,.average-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+    gap:16px
 }
 
-header h1 {
-    color: #00d4ff;
-    font-size: 28px;
+.card,.formula,.graph-card,.average-card,.settings-card{
+    background:#14233a;
+    border:1px solid #263e5e;
+    border-radius:15px;
+    padding:20px
 }
 
-header p {
-    color: #aab8cc;
-    margin-top: 10px;
+.card{text-align:center}
+.card h3,.average-card h3{color:#aab8cc;font-size:16px;margin-bottom:15px}
+.card p{color:#00d4ff;font-size:30px;font-weight:bold;overflow-wrap:anywhere}
+
+.formula{line-height:1.9}
+.formula h3{color:#00d4ff;margin-bottom:8px}
+.formula .actual{color:#aab8cc;font-size:14px;margin-top:8px}
+.formula .result{color:#00ff99;font-size:19px;font-weight:bold;margin-top:5px}
+.formula .note{color:#8192a9;font-size:12px;margin-top:5px}
+
+.settings-card{line-height:1.8}
+.settings-card h3{color:#00d4ff;margin-bottom:15px}
+
+.setting-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+    margin:13px 0
 }
 
-.status {
-    margin-top: 15px;
-    color: #ffcc66;
-    font-size: 14px;
+.setting-row label{color:#dce7f5}
+
+input[type=number]{
+    width:115px;
+    padding:10px;
+    border-radius:7px;
+    border:1px solid #426080;
+    background:#080f1e;
+    color:#fff;
+    font-size:16px
 }
 
-h2 {
-    color: #00d4ff;
-    margin: 32px 0 18px;
-    font-size: 21px;
+input[type=checkbox]{width:19px;height:19px;accent-color:#00d4ff}
+
+button{
+    border:0;
+    border-radius:7px;
+    padding:10px 16px;
+    background:#00a9d4;
+    color:#06111f;
+    font-weight:bold;
+    cursor:pointer;
+    margin:5px 4px 5px 0
 }
 
-.dashboard {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 18px;
+button:hover{background:#00d4ff}
+button.danger{background:#e05252;color:#fff}
+button.secondary{background:#344963;color:#fff}
+
+.small-status{font-size:13px;color:#aab8cc;margin-top:8px}
+
+.table-box{
+    overflow-x:auto;
+    background:#14233a;
+    border-radius:12px;
+    border:1px solid #263e5e
 }
 
-.card {
-    background: #14233a;
-    border: 1px solid #263e5e;
-    border-radius: 15px;
-    padding: 23px;
-    text-align: center;
+table{width:100%;border-collapse:collapse;min-width:650px}
+th,td{
+    padding:13px;
+    text-align:center;
+    border-bottom:1px solid #344963
+}
+th{background:#203653;color:#00d4ff}
+td{color:#dce7f5}
+
+.graph-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+    gap:18px
 }
 
-.card h3 {
-    color: #aab8cc;
-    font-size: 17px;
-    margin-bottom: 18px;
+.graph-card{min-width:0}
+.graph-card h3{color:#00d4ff;margin-bottom:15px}
+.graph-card canvas{width:100%!important;max-height:280px}
+
+.vi-card{grid-column:1/-1}
+.vi-card canvas{max-height:420px}
+
+.graph-info{font-size:13px;color:#aab8cc;margin:10px 0}
+
+.average-card{text-align:center}
+.average-card p{color:#00d4ff;font-size:24px;font-weight:bold}
+
+.conclusion{
+    margin-top:35px;
+    padding:28px 15px;
+    text-align:center;
+    background:#123b32;
+    color:#00ff99;
+    border:1px solid #087d5a;
+    border-radius:15px;
+    font-size:23px;
+    font-weight:bold
 }
 
-.card p {
-    color: #00d4ff;
-    font-size: 30px;
-    font-weight: bold;
-    overflow-wrap: anywhere;
+footer{
+    text-align:center;
+    color:#8192a9;
+    margin-top:35px;
+    padding:20px;
+    line-height:1.8
 }
 
-.calculation {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-}
-
-.formula {
-    background: #14233a;
-    border: 1px solid #263e5e;
-    border-radius: 12px;
-    padding: 18px;
-    line-height: 1.8;
-}
-
-.formula h3 {
-    color: #00d4ff;
-    margin-bottom: 8px;
-}
-
-.table-box {
-    overflow-x: auto;
-    background: #14233a;
-    border-radius: 12px;
-    border: 1px solid #263e5e;
-}
-
-table {
-    width: 100%;
-    border-collapse: collapse;
-    min-width: 650px;
-}
-
-th, td {
-    padding: 14px;
-    text-align: center;
-    border-bottom: 1px solid #344963;
-}
-
-th {
-    background: #203653;
-    color: #00d4ff;
-}
-
-td {
-    color: #dce7f5;
-}
-
-.graph-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 18px;
-}
-
-.graph-card {
-    background: #14233a;
-    border: 1px solid #263e5e;
-    border-radius: 15px;
-    padding: 18px;
-    min-width: 0;
-}
-
-.graph-card h3 {
-    color: #00d4ff;
-    margin-bottom: 15px;
-}
-
-.graph-card canvas {
-    width: 100% !important;
-    max-height: 230px;
-}
-
-.average-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-}
-
-.average-card {
-    background: #14233a;
-    border: 1px solid #263e5e;
-    padding: 20px;
-    text-align: center;
-    border-radius: 12px;
-}
-
-.average-card h3 {
-    color: #aab8cc;
-    margin-bottom: 12px;
-}
-
-.average-card p {
-    color: #00d4ff;
-    font-size: 24px;
-    font-weight: bold;
-}
-
-.conclusion {
-    margin-top: 35px;
-    padding: 28px 15px;
-    text-align: center;
-    background: #123b32;
-    color: #00ff99;
-    border: 1px solid #087d5a;
-    border-radius: 15px;
-    font-size: 23px;
-    font-weight: bold;
-}
-
-footer {
-    text-align: center;
-    color: #8192a9;
-    margin-top: 35px;
-    padding: 20px;
-    line-height: 1.8;
-}
-
-@media(max-width: 600px) {
-    body {
-        padding: 12px;
-    }
-
-    header h1 {
-        font-size: 22px;
-    }
-
-    h2 {
-        font-size: 19px;
-    }
-
-    .card p {
-        font-size: 26px;
-    }
+@media(max-width:600px){
+    body{padding:12px}
+    header h1{font-size:22px}
+    h2{font-size:19px}
+    .card p{font-size:26px}
+    .vi-card{grid-column:auto}
 }
 </style>
 </head>
@@ -231,96 +179,115 @@ footer {
 <header>
     <h1>OHM'S LAW MONITORING SYSTEM</h1>
     <p>IoT Based Live Electrical Parameter Monitoring</p>
-    <div class="status" id="connectionStatus">
-        Connecting to Firebase...
-    </div>
+    <div class="status" id="connectionStatus">Connecting to Firebase...</div>
 </header>
 
 <h2>LIVE MONITORING</h2>
 
 <div class="dashboard">
-    <div class="card">
-        <h3>Voltage</h3>
-        <p id="voltage">0 V</p>
+    <div class="card"><h3>Voltage</h3><p id="voltage">0 V</p></div>
+    <div class="card"><h3>Current</h3><p id="current">0 A</p></div>
+    <div class="card"><h3>Resistance</h3><p id="resistance">0 Ω</p></div>
+    <div class="card"><h3>Power</h3><p id="power">0 W</p></div>
+</div>
+
+<h2>CALCULATION SETTINGS</h2>
+
+<div class="settings-card">
+    <h3>Resistance-Based Calculation Control</h3>
+
+    <div class="setting-row">
+        <label for="threshold">Resistance Difference Threshold (Ω)</label>
+        <input type="number" id="threshold" min="0.01" step="any" value="10">
     </div>
 
-    <div class="card">
-        <h3>Current</h3>
-        <p id="current">0 A</p>
+    <div class="setting-row">
+        <label for="autoCalculation">Enable Automatic Calculation</label>
+        <input type="checkbox" id="autoCalculation" checked>
     </div>
 
-    <div class="card">
-        <h3>Resistance</h3>
-        <p id="resistance">0 Ω</p>
-    </div>
-
-    <div class="card">
-        <h3>Power</h3>
-        <p id="power">0 W</p>
-    </div>
+    <button id="saveSettings">Save Settings</button>
+    <p class="small-status" id="settingsStatus">Default threshold: 10 Ω</p>
+    <p class="small-status" id="calculationStatus">Waiting for first reading...</p>
 </div>
 
 <h2>OHM'S LAW CALCULATION</h2>
 
 <div class="calculation">
+
     <div class="formula">
         <h3>Voltage</h3>
         <p>V = I × R</p>
-        <p>Voltage = Current × Resistance</p>
+        <p class="actual" id="voltageCalculation">Calculation: Waiting...</p>
+        <p class="result" id="voltageResult">Result: -- V</p>
     </div>
 
     <div class="formula">
         <h3>Current</h3>
         <p>I = V / R</p>
-        <p>Current = Voltage / Resistance</p>
+        <p class="actual" id="currentCalculation">Calculation: Waiting...</p>
+        <p class="result" id="currentResult">Result: -- A</p>
     </div>
 
     <div class="formula">
         <h3>Resistance</h3>
         <p>R = V / I</p>
-        <p>Resistance = Voltage / Current</p>
+        <p class="actual" id="resistanceCalculation">Calculation: Waiting...</p>
+        <p class="result" id="resistanceResult">Result: -- Ω</p>
     </div>
 
     <div class="formula">
         <h3>Power</h3>
         <p>P = V × I</p>
-        <p>Power = Voltage × Current</p>
+        <p class="actual" id="powerCalculation">Calculation: Waiting...</p>
+        <p class="result" id="powerResult">Result: -- VA</p>
+        <p class="note">V × I gives apparent power (VA). Actual active power is measured separately by PZEM.</p>
     </div>
+
 </div>
 
-<h2>PARAMETER READINGS TABLE</h2>
+<h2>PARAMETER READINGS HISTORY</h2>
+
+<div style="margin-bottom:12px">
+    <button id="downloadData">Download Data (CSV)</button>
+    <button class="danger" id="clearData">Clear All Data</button>
+</div>
 
 <div class="table-box">
 <table>
     <thead>
         <tr>
-            <th>Time</th>
+            <th>Date & Time</th>
             <th>Voltage (V)</th>
             <th>Current (A)</th>
             <th>Resistance (Ω)</th>
             <th>Power (W)</th>
         </tr>
     </thead>
-
     <tbody id="readingsTable">
-        <tr>
-            <td colspan="5">Waiting for readings...</td>
-        </tr>
+        <tr><td colspan="5">Waiting for readings...</td></tr>
     </tbody>
 </table>
 </div>
 
+<p class="small-status" id="historyStatus">History will be loaded from Firebase.</p>
+
 <h2>LIVE PARAMETER GRAPHS</h2>
 
 <div class="graph-grid">
-    <div class="graph-card">
-        <h3>Voltage Graph</h3>
-        <canvas id="voltageChart"></canvas>
-    </div>
 
-    <div class="graph-card">
-        <h3>Current Graph</h3>
-        <canvas id="currentChart"></canvas>
+    <div class="graph-card vi-card">
+        <h3>V-I Characteristics Graph</h3>
+        <p class="graph-info">
+            X-Axis: Current (A) &nbsp; | &nbsp; Y-Axis: Voltage (V)
+            <br>Mouse wheel / pinch to zoom. Drag to pan.
+        </p>
+        <canvas id="viChart"></canvas>
+        <div>
+            <button id="resetViZoom" class="secondary">Reset Zoom</button>
+            <button id="clearViGraph" class="danger">Clear V-I Graph</button>
+        </div>
+        <p class="small-status" id="viStatus">Waiting for data points...</p>
     </div>
 
     <div class="graph-card">
@@ -332,30 +299,16 @@ footer {
         <h3>Power Graph</h3>
         <canvas id="powerChart"></canvas>
     </div>
+
 </div>
 
 <h2>AVERAGE VALUES</h2>
 
 <div class="average-grid">
-    <div class="average-card">
-        <h3>Average Voltage</h3>
-        <p id="avgVoltage">0 V</p>
-    </div>
-
-    <div class="average-card">
-        <h3>Average Current</h3>
-        <p id="avgCurrent">0 A</p>
-    </div>
-
-    <div class="average-card">
-        <h3>Average Resistance</h3>
-        <p id="avgResistance">0 Ω</p>
-    </div>
-
-    <div class="average-card">
-        <h3>Average Power</h3>
-        <p id="avgPower">0 W</p>
-    </div>
+    <div class="average-card"><h3>Average Voltage</h3><p id="avgVoltage">0 V</p></div>
+    <div class="average-card"><h3>Average Current</h3><p id="avgCurrent">0 A</p></div>
+    <div class="average-card"><h3>Average Resistance</h3><p id="avgResistance">0 Ω</p></div>
+    <div class="average-card"><h3>Average Power</h3><p id="avgPower">0 W</p></div>
 </div>
 
 <div class="conclusion">
@@ -370,10 +323,12 @@ footer {
 </div>
 
 <script>
-// 1. Firebase Configuration
+// ==========================================
+// 1. FIREBASE CONFIGURATION
+// ==========================================
 
 const firebaseConfig = {
-    apiKey: "AIzaSyCxTUfiBu0cHa_3SRJBi6R5DUbU8nk2oP8",
+    apiKey: "AIzaSyCxTUfiBu0cHa_3SRJBi6R5DUbU8nk2o8",
     authDomain: "ohms-law-monitoring.firebaseapp.com",
     databaseURL: "https://ohms-law-monitoring-default-rtdb.asia-southeast1.firebasedatabase.app/",
     projectId: "ohms-law-monitoring",
@@ -382,82 +337,344 @@ const firebaseConfig = {
     appId: "1:244604352787:web:e4e2c83cc41e874232c2e6"
 };
 
-// 2. Initialize Firebase
-
 firebase.initializeApp(firebaseConfig);
 
 const database = firebase.database();
 
-// 3. Firebase Readings Path
-
 const readingsRef = database.ref("ohmsLaw/readings");
+const settingsRef = database.ref("ohmsLaw/settings");
 
-// 4. Create Graphs
+// ==========================================
+// 2. GLOBAL VARIABLES
+// ==========================================
 
-function createChart(canvasId, label) {
+let allReadings = [];
+let latestReading = null;
 
+let threshold = 10;
+let autoCalculation = true;
+
+let acceptedCalculation = null;
+
+let knownReadingKeys = new Set();
+let viGraphKeys = new Set();
+let firstReadingsLoad = true;
+let viGraphCleared = false;
+
+// ==========================================
+// 3. HELPER FUNCTIONS
+// ==========================================
+
+function numberValue(value, fallback = 0) {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : fallback;
+}
+
+function getDate(timestamp) {
+    if (!timestamp) return "--";
+    let time = Number(timestamp);
+    if (time < 100000000000) time *= 1000;
+    return new Date(time).toLocaleString();
+}
+
+function getTime(timestamp) {
+    if (!timestamp) return "--";
+    let time = Number(timestamp);
+    if (time < 100000000000) time *= 1000;
+    return new Date(time).toLocaleTimeString();
+}
+
+// ==========================================
+// 4. CHART SETTINGS
+// ==========================================
+
+Chart.register(ChartZoom);
+
+function createLineChart(canvasId, label, color) {
     return new Chart(document.getElementById(canvasId), {
         type: "line",
-
         data: {
             labels: [],
-
             datasets: [{
                 label: label,
                 data: [],
-                borderColor: "#00d4ff",
+                borderColor: color,
                 backgroundColor: "rgba(0,212,255,0.12)",
                 borderWidth: 2,
-                tension: 0.3,
-                fill: true
+                tension: 0.25,
+                pointRadius: 3
             }]
         },
-
         options: {
             responsive: true,
             maintainAspectRatio: true,
-
+            animation: false,
             scales: {
                 x: {
-                    ticks: { color: "#aab8cc" },
-                    grid: { color: "#263e5e" }
+                    ticks: {color:"#aab8cc"},
+                    grid: {color:"#263e5e"}
                 },
-
                 y: {
-                    ticks: { color: "#aab8cc" },
-                    grid: { color: "#263e5e" }
+                    ticks: {color:"#aab8cc"},
+                    grid: {color:"#263e5e"}
                 }
             },
-
             plugins: {
-                legend: {
-                    labels: { color: "#ffffff" }
-                }
+                legend: {labels:{color:"#fff"}}
             }
         }
     });
 }
 
-const voltageChart = createChart("voltageChart", "Voltage (V)");
-const currentChart = createChart("currentChart", "Current (A)");
-const resistanceChart = createChart("resistanceChart", "Resistance (Ω)");
-const powerChart = createChart("powerChart", "Power (W)");
+const resistanceChart = createLineChart(
+    "resistanceChart","Resistance (Ω)","#00d4ff"
+);
 
-// 5. Update Graphs
+const powerChart = createLineChart(
+    "powerChart","Power (W)","#00ff99"
+);
 
-function updateChart(chart, readings, key) {
+// ==========================================
+// 5. V-I CHARACTERISTICS SCATTER GRAPH
+// ==========================================
 
-    chart.data.labels = readings.map((r, i) => i + 1);
+const viChart = new Chart(document.getElementById("viChart"), {
+    type: "scatter",
 
-    chart.data.datasets[0].data =
-        readings.map(r => r[key]);
+    data: {
+        datasets: [{
+            label: "V-I Characteristics",
+            data: [],
+            showLine: true,
+            borderColor: "#00d4ff",
+            backgroundColor: "#00d4ff",
+            borderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 7,
+            tension: 0.15
+        }]
+    },
 
-    chart.update();
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        animation: false,
+
+        scales: {
+            x: {
+                type: "linear",
+                title: {
+                    display: true,
+                    text: "Current (A)",
+                    color: "#00d4ff"
+                },
+                ticks: {color:"#aab8cc"},
+                grid: {color:"#263e5e"}
+            },
+
+            y: {
+                type: "linear",
+                title: {
+                    display: true,
+                    text: "Voltage (V)",
+                    color: "#00d4ff"
+                },
+                ticks: {color:"#aab8cc"},
+                grid: {color:"#263e5e"}
+            }
+        },
+
+        plugins: {
+            legend: {labels:{color:"#fff"}},
+
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        const point = context.raw;
+                        return "Current: " + point.x.toFixed(3) +
+                            " A | Voltage: " + point.y.toFixed(2) + " V";
+                    }
+                }
+            },
+
+            zoom: {
+                pan: {
+                    enabled: true,
+                    mode: "xy"
+                },
+
+                zoom: {
+                    wheel: {enabled: true},
+                    pinch: {enabled: true},
+                    drag: {enabled: true},
+                    mode: "xy"
+                }
+            }
+        }
+    }
+});
+
+// ==========================================
+// 6. UPDATE LINE GRAPHS
+// ==========================================
+
+function updateLineChart(chart, readings, key) {
+    chart.data.labels = readings.map((r,i) => i+1);
+    chart.data.datasets[0].data = readings.map(r => r[key]);
+    chart.update("none");
 }
 
-// 6. Read Data from Firebase
+// ==========================================
+// 7. CALCULATION CONTROL
+// ==========================================
 
-readingsRef.limitToLast(100).on("value", function(snapshot) {
+function updateCalculationDisplay(data) {
+
+    if (!data) return;
+
+    const v = data.voltage;
+    const i = data.current;
+    const r = data.resistance;
+
+    if (v <= 0 || i <= 0 || r <= 0) return;
+
+    const calculatedVoltage = i * r;
+    const calculatedCurrent = v / r;
+    const calculatedResistance = v / i;
+    const calculatedPower = v * i;
+
+    document.getElementById("voltageCalculation").textContent =
+        `Calculation: ${i.toFixed(3)} × ${r.toFixed(2)}`;
+
+    document.getElementById("voltageResult").textContent =
+        `Result: ${calculatedVoltage.toFixed(2)} V`;
+
+    document.getElementById("currentCalculation").textContent =
+        `Calculation: ${v.toFixed(2)} ÷ ${r.toFixed(2)}`;
+
+    document.getElementById("currentResult").textContent =
+        `Result: ${calculatedCurrent.toFixed(3)} A`;
+
+    document.getElementById("resistanceCalculation").textContent =
+        `Calculation: ${v.toFixed(2)} ÷ ${i.toFixed(3)}`;
+
+    document.getElementById("resistanceResult").textContent =
+        `Result: ${calculatedResistance.toFixed(2)} Ω`;
+
+    document.getElementById("powerCalculation").textContent =
+        `Calculation: ${v.toFixed(2)} × ${i.toFixed(3)}`;
+
+    document.getElementById("powerResult").textContent =
+        `Result: ${calculatedPower.toFixed(2)} VA`;
+}
+
+function evaluateCalculation(reading) {
+
+    if (!reading || reading.resistance <= 0) return;
+
+    if (!acceptedCalculation) {
+        acceptedCalculation = {...reading};
+        updateCalculationDisplay(acceptedCalculation);
+
+        document.getElementById("calculationStatus").textContent =
+            "Initial calculation established.";
+
+        return;
+    }
+
+    const difference = Math.abs(
+        reading.resistance - acceptedCalculation.resistance
+    );
+
+    if (autoCalculation && difference > threshold) {
+
+        acceptedCalculation = {...reading};
+
+        updateCalculationDisplay(acceptedCalculation);
+
+        document.getElementById("calculationStatus").textContent =
+            `Calculation updated. Resistance difference: ${difference.toFixed(2)} Ω`;
+
+    } else if (!autoCalculation) {
+
+        document.getElementById("calculationStatus").textContent =
+            "Automatic calculation OFF. Previous calculation retained.";
+
+    } else {
+
+        document.getElementById("calculationStatus").textContent =
+            `Waiting for resistance difference greater than ${threshold} Ω. Current difference: ${difference.toFixed(2)} Ω`;
+    }
+}
+
+// ==========================================
+// 8. LOAD SETTINGS FROM FIREBASE
+// ==========================================
+
+settingsRef.on("value", function(snapshot) {
+
+    const settings = snapshot.val() || {};
+
+    threshold = numberValue(settings.threshold, 10);
+    autoCalculation = settings.autoCalculation !== false;
+
+    document.getElementById("threshold").value = threshold;
+    document.getElementById("autoCalculation").checked = autoCalculation;
+
+    document.getElementById("settingsStatus").textContent =
+        "Settings loaded from Firebase.";
+
+    if (latestReading) {
+        evaluateCalculation(latestReading);
+    }
+
+}, function(error) {
+
+    document.getElementById("settingsStatus").textContent =
+        "Settings Error: " + error.message;
+
+});
+
+// ==========================================
+// 9. SAVE SETTINGS
+// ==========================================
+
+document.getElementById("saveSettings").addEventListener("click", async function() {
+
+    const inputThreshold = Number(
+        document.getElementById("threshold").value
+    );
+
+    if (!Number.isFinite(inputThreshold) || inputThreshold <= 0) {
+        alert("Please enter a valid threshold greater than 0 Ω.");
+        return;
+    }
+
+    const inputAuto = document.getElementById("autoCalculation").checked;
+
+    try {
+
+        await settingsRef.update({
+            threshold: inputThreshold,
+            autoCalculation: inputAuto
+        });
+
+        document.getElementById("settingsStatus").textContent =
+            "Settings saved successfully!";
+
+    } catch(error) {
+
+        document.getElementById("settingsStatus").textContent =
+            "Save Error: " + error.message;
+
+    }
+});
+
+// ==========================================
+// 10. READING HISTORY FROM FIREBASE
+// ==========================================
+
+readingsRef.on("value", function(snapshot) {
 
     const readings = [];
 
@@ -467,25 +684,34 @@ readingsRef.limitToLast(100).on("value", function(snapshot) {
 
         if (!item) return;
 
-        const v = Number(item.voltage) || 0;
-        const i = Number(item.current) || 0;
+        const v = numberValue(item.voltage);
+        const i = numberValue(item.current);
 
         const r = item.resistance != null
-            ? Number(item.resistance)
-            : (i !== 0 ? v / i : 0);
+            ? numberValue(item.resistance)
+            : (i > 0 ? v / i : 0);
 
         const p = item.power != null
-            ? Number(item.power)
+            ? numberValue(item.power)
             : v * i;
 
         readings.push({
+            key: child.key,
             voltage: v,
             current: i,
             resistance: r,
             power: p,
-            timestamp: Number(item.timestamp) || 0
+            timestamp: numberValue(item.timestamp)
         });
+
     });
+
+    readings.sort((a,b) => {
+        if (a.timestamp && b.timestamp) return a.timestamp - b.timestamp;
+        return String(a.key).localeCompare(String(b.key));
+    });
+
+    allReadings = readings;
 
     const status = document.getElementById("connectionStatus");
 
@@ -493,59 +719,106 @@ readingsRef.limitToLast(100).on("value", function(snapshot) {
         ? "● Live Data Connected"
         : "Connected - Waiting for readings";
 
+    document.getElementById("historyStatus").textContent =
+        `Total saved readings: ${readings.length}`;
+
+    // Empty history
+
     if (readings.length === 0) {
+
+        latestReading = null;
+        acceptedCalculation = null;
 
         document.getElementById("readingsTable").innerHTML =
             '<tr><td colspan="5">Waiting for readings...</td></tr>';
 
+        document.getElementById("voltage").textContent = "0 V";
+        document.getElementById("current").textContent = "0 A";
+        document.getElementById("resistance").textContent = "0 Ω";
+        document.getElementById("power").textContent = "0 W";
+
+        document.getElementById("calculationStatus").textContent =
+            "Waiting for first reading...";
+
+        ["voltageCalculation","currentCalculation",
+         "resistanceCalculation","powerCalculation"].forEach(id => {
+            document.getElementById(id).textContent = "Calculation: Waiting...";
+        });
+
+        ["voltageResult","currentResult",
+         "resistanceResult","powerResult"].forEach(id => {
+            document.getElementById(id).textContent = "Result: --";
+        });
+
+        updateLineChart(resistanceChart, [], "resistance");
+        updateLineChart(powerChart, [], "power");
+
+        viChart.data.datasets[0].data = [];
+        viChart.update("none");
+
         return;
     }
 
-    // Latest Readings
+    // ======================================
+    // 11. LATEST LIVE VALUES
+    // ======================================
 
-    const latest = readings[readings.length - 1];
+    latestReading = readings[readings.length - 1];
 
     document.getElementById("voltage").textContent =
-        latest.voltage.toFixed(2) + " V";
+        latestReading.voltage.toFixed(2) + " V";
 
     document.getElementById("current").textContent =
-        latest.current.toFixed(3) + " A";
+        latestReading.current.toFixed(3) + " A";
 
     document.getElementById("resistance").textContent =
-        latest.resistance.toFixed(2) + " Ω";
+        latestReading.resistance.toFixed(2) + " Ω";
 
     document.getElementById("power").textContent =
-        latest.power.toFixed(2) + " W";
+        latestReading.power.toFixed(2) + " W";
 
-    // Readings Table
+    // ======================================
+    // 12. RESISTANCE-BASED CALCULATION
+    // ======================================
+
+    evaluateCalculation(latestReading);
+
+    // ======================================
+    // 13. READING HISTORY TABLE
+    // ======================================
 
     const table = document.getElementById("readingsTable");
-
     table.innerHTML = "";
 
-    readings.slice().reverse().slice(0, 10).forEach(function(r) {
+    readings.slice().reverse().slice(0,100).forEach(function(r) {
 
-        const time = r.timestamp
-            ? new Date(r.timestamp).toLocaleTimeString()
-            : "--";
+        const tr = document.createElement("tr");
 
-        table.innerHTML += `
-            <tr>
-                <td>${time}</td>
-                <td>${r.voltage.toFixed(2)}</td>
-                <td>${r.current.toFixed(3)}</td>
-                <td>${r.resistance.toFixed(2)}</td>
-                <td>${r.power.toFixed(2)}</td>
-            </tr>
-        `;
+        const values = [
+            getDate(r.timestamp),
+            r.voltage.toFixed(2),
+            r.current.toFixed(3),
+            r.resistance.toFixed(2),
+            r.power.toFixed(2)
+        ];
+
+        values.forEach(function(value) {
+            const td = document.createElement("td");
+            td.textContent = value;
+            tr.appendChild(td);
+        });
+
+        table.appendChild(tr);
     });
 
-    // Average Values
+    // ======================================
+    // 14. AVERAGE VALUES
+    // ======================================
 
     const count = readings.length;
 
     const avg = key =>
-        readings.reduce((sum, r) => sum + r[key], 0) / count;
+        readings.reduce((sum,r) => sum + r[key],0) / count;
 
     document.getElementById("avgVoltage").textContent =
         avg("voltage").toFixed(2) + " V";
@@ -559,17 +832,176 @@ readingsRef.limitToLast(100).on("value", function(snapshot) {
     document.getElementById("avgPower").textContent =
         avg("power").toFixed(2) + " W";
 
-    // Update Graphs
+    // ======================================
+    // 15. RESISTANCE AND POWER GRAPHS
+    // ======================================
 
-    updateChart(voltageChart, readings, "voltage");
-    updateChart(currentChart, readings, "current");
-    updateChart(resistanceChart, readings, "resistance");
-    updateChart(powerChart, readings, "power");
+    updateLineChart(resistanceChart, readings, "resistance");
+    updateLineChart(powerChart, readings, "power");
+
+    // ======================================
+    // 16. V-I GRAPH DATA
+    // ======================================
+
+    const currentKeys = new Set(readings.map(r => r.key));
+
+    if (firstReadingsLoad) {
+
+        viGraphKeys = new Set(readings.map(r => r.key));
+        firstReadingsLoad = false;
+
+    } else if (viGraphCleared) {
+
+        readings.forEach(function(r) {
+            if (!knownReadingKeys.has(r.key)) {
+                viGraphKeys.add(r.key);
+            }
+        });
+
+    } else {
+
+        readings.forEach(r => viGraphKeys.add(r.key));
+
+    }
+
+    knownReadingKeys = currentKeys;
+
+    const viData = readings
+        .filter(r => viGraphKeys.has(r.key))
+        .filter(r => r.current > 0 && r.voltage > 0)
+        .map(r => ({
+            x: r.current,
+            y: r.voltage
+        }));
+
+    viChart.data.datasets[0].data = viData;
+    viChart.update("none");
+
+    document.getElementById("viStatus").textContent =
+        "V-I Graph Points: " + viData.length;
 
 }, function(error) {
 
     document.getElementById("connectionStatus").textContent =
         "Firebase Error: " + error.message;
+
+});
+
+// ==========================================
+// 17. CLEAR V-I GRAPH ONLY
+// ==========================================
+
+document.getElementById("clearViGraph").addEventListener("click", function() {
+
+    if (!confirm("Clear V-I graph points? Firebase readings will remain safe.")) {
+        return;
+    }
+
+    viGraphKeys.clear();
+    viGraphCleared = true;
+
+    viChart.data.datasets[0].data = [];
+    viChart.resetZoom();
+    viChart.update();
+
+    document.getElementById("viStatus").textContent =
+        "Graph cleared. New readings will appear from now on.";
+
+});
+
+// ==========================================
+// 18. RESET V-I GRAPH ZOOM
+// ==========================================
+
+document.getElementById("resetViZoom").addEventListener("click", function() {
+    viChart.resetZoom();
+});
+
+// ==========================================
+// 19. DOWNLOAD HISTORY AS CSV
+// ==========================================
+
+document.getElementById("downloadData").addEventListener("click", function() {
+
+    if (allReadings.length === 0) {
+        alert("No reading data available to download.");
+        return;
+    }
+
+    const rows = [
+        ["Date & Time","Voltage (V)","Current (A)","Resistance (Ohm)","Power (W)"]
+    ];
+
+    allReadings.forEach(function(r) {
+
+        rows.push([
+            getDate(r.timestamp),
+            r.voltage,
+            r.current,
+            r.resistance,
+            r.power
+        ]);
+
+    });
+
+    const csv = rows.map(row =>
+        row.map(value =>
+            '"' + String(value).replace(/"/g,'""') + '"'
+        ).join(",")
+    ).join("\r\n");
+
+    const blob = new Blob(["\uFEFF" + csv], {
+        type:"text/csv;charset=utf-8;"
+    });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = "Ohms_Law_Reading_History.csv";
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    URL.revokeObjectURL(url);
+
+});
+
+// ==========================================
+// 20. CLEAR ALL FIREBASE READING HISTORY
+// ==========================================
+
+document.getElementById("clearData").addEventListener("click", async function() {
+
+    const confirmed = confirm(
+        "Are you sure you want to delete ALL reading history from Firebase? This cannot be undone."
+    );
+
+    if (!confirmed) return;
+
+    try {
+
+        await readingsRef.remove();
+
+        allReadings = [];
+        acceptedCalculation = null;
+        latestReading = null;
+
+        viGraphKeys.clear();
+        knownReadingKeys.clear();
+        viGraphCleared = true;
+
+        document.getElementById("historyStatus").textContent =
+            "All reading history deleted.";
+
+        alert("Reading history cleared successfully.");
+
+    } catch(error) {
+
+        alert("Unable to clear data: " + error.message);
+
+    }
 
 });
 
